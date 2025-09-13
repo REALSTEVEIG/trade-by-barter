@@ -165,8 +165,8 @@ export const TYPOGRAPHY = {
   fontSize: FONT_SIZES,
   fontWeight: FONT_WEIGHTS,
   fontFamily: {
-    inter: 'Inter_400Regular',
-    poppins: 'Poppins_400Regular'
+    inter: 'System',
+    poppins: 'System'
   },
   lineHeight: {
     none: 1,
