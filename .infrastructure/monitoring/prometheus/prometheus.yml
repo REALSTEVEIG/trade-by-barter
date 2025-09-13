@@ -1,0 +1,241 @@
+# Prometheus Configuration for TradeByBarter Nigerian Marketplace
+# Optimized for African infrastructure and Nigerian business operations
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'tradebybarter-nigeria'
+    region: 'africa-west'
+    timezone: 'WAT'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - "rules/*.yml"
+  - "nigeria-specific-rules/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # TradeByBarter Backend API
+  - job_name: 'tradebybarter-backend'
+    static_configs:
+      - targets: ['backend:3001']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    params:
+      format: ['prometheus']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: backend:3001
+
+  # Frontend Next.js Application
+  - job_name: 'tradebybarter-frontend'
+    static_configs:
+      - targets: ['frontend:3000']
+    metrics_path: '/api/metrics'
+    scrape_interval: 30s
+
+  # PostgreSQL Database
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+
+  # Redis Cache
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+
+  # NGINX Load Balancer
+  - job_name: 'nginx-exporter'
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+    scrape_interval: 30s
+
+  # Node Exporter (System Metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+
+  # Nigerian Network Monitoring
+  - job_name: 'network-monitoring'
+    static_configs:
+      - targets: ['blackbox-exporter:9115']
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+    static_configs:
+      - targets:
+        - https://tradebybarter.ng
+        - https://api.tradebybarter.ng
+        - https://paystack.com  # Nigerian payment provider
+        - https://api.paystack.co
+        labels:
+          service: 'external-dependencies'
+
+  # Mobile App Performance (if available)
+  - job_name: 'mobile-app-metrics'
+    static_configs:
+      - targets: ['mobile-metrics-collector:8080']
+    scrape_interval: 60s
+    metrics_path: '/mobile-metrics'
+
+  # Nigerian Business Hours Monitoring
+  - job_name: 'business-hours-checker'
+    static_configs:
+      - targets: ['business-hours-exporter:8081']
+    scrape_interval: 300s  # Every 5 minutes
+    metrics_path: '/business-metrics'
+
+  # SMS Provider Monitoring (Nigerian carriers)
+  - job_name: 'sms-providers'
+    static_configs:
+      - targets: ['sms-health-checker:8082']
+    scrape_interval: 60s
+    params:
+      providers: ['termii', 'sms-dome', 'bulk-sms-nigeria']
+
+# Recording rules for Nigerian marketplace metrics
+recording_rules:
+  - name: nigeria_marketplace_rules
+    interval: 30s
+    rules:
+      # Nigerian Naira transaction volumes
+      - record: nigeria:transaction_volume_naira_rate
+        expr: rate(tradebybarter_transactions_total{currency="NGN"}[5m])
+      
+      # Active users in Nigerian business hours
+      - record: nigeria:active_users_business_hours
+        expr: |
+          tradebybarter_active_users_total
+          and on() 
+          (hour() >= 9 and hour() <= 18)
+          and on()
+          (day_of_week() >= 1 and day_of_week() <= 5)
+      
+      # Lagos vs other cities traffic
+      - record: nigeria:lagos_traffic_ratio
+        expr: |
+          sum(rate(tradebybarter_requests_total{location=~"Lagos.*"}[5m])) /
+          sum(rate(tradebybarter_requests_total[5m]))
+      
+      # Mobile vs web usage (important for Nigerian market)
+      - record: nigeria:mobile_usage_ratio
+        expr: |
+          sum(rate(tradebybarter_requests_total{user_agent=~".*Mobile.*"}[5m])) /
+          sum(rate(tradebybarter_requests_total[5m]))
+      
+      # Nigerian network operator distribution
+      - record: nigeria:network_operator_distribution
+        expr: |
+          sum by (network) (
+            rate(tradebybarter_sms_sent_total{country="NG"}[5m])
+          )
+      
+      # Average response time during peak hours
+      - record: nigeria:response_time_peak_hours
+        expr: |
+          avg_over_time(
+            tradebybarter_http_request_duration_seconds{quantile="0.95"}[1h]
+          ) and on()
+          (hour() >= 12 and hour() <= 14 or hour() >= 18 and hour() <= 20)
+
+# Nigerian timezone-aware recording rules
+- name: nigeria_timezone_rules
+  interval: 60s
+  rules:
+    # Business hours indicator (9 AM - 6 PM WAT)
+    - record: nigeria:is_business_hours
+      expr: |
+        (hour(time() + 3600) >= 9 and hour(time() + 3600) <= 18)
+        and
+        (day_of_week(time() + 3600) >= 1 and day_of_week(time() + 3600) <= 5)
+    
+    # Peak hours indicator (lunch: 12-2 PM, evening: 6-8 PM WAT)
+    - record: nigeria:is_peak_hours
+      expr: |
+        (hour(time() + 3600) >= 12 and hour(time() + 3600) <= 14)
+        or
+        (hour(time() + 3600) >= 18 and hour(time() + 3600) <= 20)
+    
+    # Night hours when system maintenance can be performed
+    - record: nigeria:is_maintenance_window
+      expr: |
+        hour(time() + 3600) >= 2 and hour(time() + 3600) <= 4
+
+# Performance thresholds for Nigerian infrastructure
+- name: nigeria_performance_rules
+  interval: 15s
+  rules:
+    # High latency for Nigerian users (considering network conditions)
+    - record: nigeria:high_latency_requests
+      expr: |
+        histogram_quantile(0.95, 
+          rate(tradebybarter_http_request_duration_seconds_bucket[5m])
+        ) > 0.8  # 800ms threshold for Nigerian networks
+    
+    # Database connection pool usage
+    - record: nigeria:db_connection_usage
+      expr: |
+        (tradebybarter_db_connections_active / tradebybarter_db_connections_max) * 100
+    
+    # Redis memory usage
+    - record: nigeria:redis_memory_usage_percent
+      expr: |
+        (redis_memory_used_bytes / redis_memory_max_bytes) * 100
+    
+    # Nigerian payment success rate
+    - record: nigeria:payment_success_rate
+      expr: |
+        (
+          rate(tradebybarter_payments_total{status="success",provider="paystack"}[5m]) /
+          rate(tradebybarter_payments_total{provider="paystack"}[5m])
+        ) * 100
+
+# System health indicators
+- name: system_health_rules
+  interval: 30s
+  rules:
+    # Overall system health score
+    - record: nigeria:system_health_score
+      expr: |
+        (
+          (up{job="tradebybarter-backend"} * 40) +
+          (up{job="tradebybarter-frontend"} * 20) +
+          (up{job="postgres-exporter"} * 20) +
+          (up{job="redis-exporter"} * 10) +
+          (up{job="nginx-exporter"} * 10)
+        ) / 100 * 100
+    
+    # Critical services availability
+    - record: nigeria:critical_services_up
+      expr: |
+        min(
+          up{job=~"tradebybarter-(backend|frontend)|postgres-exporter|redis-exporter"}
+        )

@@ -1,0 +1,325 @@
+# TradeByBarter Nigerian Marketplace Alert Rules
+# Optimized for Nigerian business operations and infrastructure
+
+groups:
+  # Critical System Alerts
+  - name: nigeria_critical_alerts
+    rules:
+      # Service Down Alerts
+      - alert: BackendServiceDown
+        expr: up{job="tradebybarter-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: backend
+          region: nigeria
+        annotations:
+          summary: "TradeByBarter Backend is down"
+          description: "Backend service has been down for more than 1 minute. Nigerian users cannot access the marketplace."
+          runbook_url: "https://docs.tradebybarter.ng/runbooks/backend-down"
+          
+      - alert: DatabaseDown
+        expr: up{job="postgres-exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: database
+          region: nigeria
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "Main database is down for {{ $value }} minutes. All Nigerian transactions are affected."
+          
+      - alert: RedisDown
+        expr: up{job="redis-exporter"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          service: cache
+          region: nigeria
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis cache service is down. Performance will be degraded for Nigerian users."
+
+  # Nigerian Business Hours Critical Alerts
+  - name: nigeria_business_hours_alerts
+    rules:
+      - alert: HighLatencyDuringBusinessHours
+        expr: |
+          nigeria:high_latency_requests > 0 
+          and nigeria:is_business_hours == 1
+        for: 5m
+        labels:
+          severity: warning
+          service: performance
+          region: nigeria
+          business_impact: high
+        annotations:
+          summary: "High latency during Nigerian business hours"
+          description: "95th percentile response time is {{ $value }}ms during Nigerian business hours (9 AM - 6 PM WAT)"
+          
+      - alert: LowPaymentSuccessRate
+        expr: |
+          nigeria:payment_success_rate < 95
+          and nigeria:is_business_hours == 1
+        for: 3m
+        labels:
+          severity: critical
+          service: payments
+          region: nigeria
+          business_impact: critical
+        annotations:
+          summary: "Low payment success rate in Nigeria"
+          description: "Paystack payment success rate is {{ $value }}% during business hours. Nigerian transactions are failing."
+
+  # Nigerian Network and Infrastructure Alerts  
+  - name: nigeria_infrastructure_alerts
+    rules:
+      - alert: LagosHighTrafficAnomalies
+        expr: |
+          nigeria:lagos_traffic_ratio > 0.7
+          and rate(tradebybarter_requests_total[5m]) > 100
+        for: 10m
+        labels:
+          severity: warning
+          service: traffic
+          region: lagos
+        annotations:
+          summary: "Unusual traffic concentration in Lagos"
+          description: "{{ $value | humanizePercentage }} of traffic is from Lagos. Consider scaling Lagos infrastructure."
+          
+      - alert: MobileUsageSpike
+        expr: |
+          nigeria:mobile_usage_ratio > 0.9
+          and nigeria:is_peak_hours == 1
+        for: 15m
+        labels:
+          severity: info
+          service: mobile
+          region: nigeria
+        annotations:
+          summary: "High mobile usage in Nigeria"
+          description: "{{ $value | humanizePercentage }} of traffic is from mobile devices during peak hours."
+
+  # Nigerian Marketplace Business Logic Alerts
+  - name: nigeria_marketplace_alerts
+    rules:
+      - alert: LowActiveUsersBusinessHours
+        expr: |
+          nigeria:active_users_business_hours < 50
+          and nigeria:is_business_hours == 1
+        for: 30m
+        labels:
+          severity: warning
+          service: marketplace
+          region: nigeria
+        annotations:
+          summary: "Low active users during Nigerian business hours"
+          description: "Only {{ $value }} active users during business hours. Expected > 50."
+          
+      - alert: NigerianSMSProviderDown
+        expr: |
+          up{job="sms-providers"} == 0
+          or nigeria:network_operator_distribution{network=~"MTN|Glo|Airtel|9mobile"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: sms
+          region: nigeria
+        annotations:
+          summary: "Nigerian SMS provider issues"
+          description: "SMS delivery to Nigerian networks is failing. User verification affected."
+
+  # Database and Storage Alerts
+  - name: nigeria_database_alerts  
+    rules:
+      - alert: HighDatabaseConnections
+        expr: nigeria:db_connection_usage > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+          region: nigeria
+        annotations:
+          summary: "High database connection usage"
+          description: "Database connection pool is {{ $value }}% full. Nigerian marketplace performance may degrade."
+          
+      - alert: DatabaseSlowQueries
+        expr: |
+          rate(postgresql_slow_queries_total[5m]) > 10
+          and nigeria:is_business_hours == 1
+        for: 3m
+        labels:
+          severity: warning
+          service: database
+          region: nigeria
+        annotations:
+          summary: "Slow database queries during business hours"
+          description: "{{ $value }} slow queries per second during Nigerian business hours."
+
+  # Security and Compliance Alerts
+  - name: nigeria_security_alerts
+    rules:
+      - alert: SuspiciousTransactionPattern
+        expr: |
+          rate(tradebybarter_suspicious_transactions_total{country="NG"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: security
+          region: nigeria
+          compliance: aml
+        annotations:
+          summary: "Suspicious transaction patterns in Nigeria"
+          description: "{{ $value }} suspicious transactions per second. AML compliance review required."
+          
+      - alert: FailedLoginAttempts
+        expr: |
+          rate(tradebybarter_failed_login_attempts_total{country="NG"}[5m]) > 20
+        for: 5m
+        labels:
+          severity: warning
+          service: security
+          region: nigeria
+        annotations:
+          summary: "High failed login attempts from Nigeria"
+          description: "{{ $value }} failed login attempts per second. Possible brute force attack."
+          
+      - alert: UnverifiedNigerianPhoneRegistrations
+        expr: |
+          rate(tradebybarter_phone_registrations_total{country="NG",verified="false"}[5m]) > 10
+        for: 10m
+        labels:
+          severity: warning
+          service: compliance
+          region: nigeria
+          compliance: ncc
+        annotations:
+          summary: "High unverified phone registrations"
+          description: "{{ $value }} unverified Nigerian phone registrations per second. NCC compliance risk."
+
+  # Performance and Capacity Alerts
+  - name: nigeria_capacity_alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: |
+          (100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)) > 80
+        for: 10m
+        labels:
+          severity: warning
+          service: infrastructure
+          region: nigeria
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value }}% for 10 minutes."
+          
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          service: infrastructure
+          region: nigeria
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}% for 10 minutes."
+          
+      - alert: LowDiskSpace
+        expr: |
+          (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+          service: infrastructure
+          region: nigeria
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk usage is {{ $value }}% on {{ $labels.mountpoint }}."
+
+  # Nigerian Timezone-specific Alerts
+  - name: nigeria_timezone_alerts
+    rules:
+      - alert: MaintenanceWindowViolation
+        expr: |
+          (nigeria:is_maintenance_window == 0)
+          and on() 
+          (rate(tradebybarter_deployments_total[5m]) > 0)
+        for: 1m
+        labels:
+          severity: warning
+          service: deployment
+          region: nigeria
+        annotations:
+          summary: "Deployment outside maintenance window"
+          description: "Deployment detected outside Nigerian maintenance window (2-4 AM WAT)."
+          
+      - alert: WeekendHighActivity
+        expr: |
+          day_of_week(time() + 3600) > 5
+          and nigeria:active_users_business_hours > 200
+        for: 30m
+        labels:
+          severity: info
+          service: marketplace
+          region: nigeria
+        annotations:
+          summary: "High weekend activity in Nigeria"
+          description: "{{ $value }} active users during weekend. Consider weekend support scaling."
+
+  # External Dependencies Alerts
+  - name: nigeria_external_alerts
+    rules:
+      - alert: PaystackAPIDown
+        expr: |
+          probe_success{instance="https://api.paystack.co"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: payments
+          region: nigeria
+          external: paystack
+        annotations:
+          summary: "Paystack API is down"
+          description: "Nigerian payment provider Paystack is unreachable. All transactions affected."
+          
+      - alert: GoogleMapsAPIDown
+        expr: |
+          probe_success{instance=~".*maps.googleapis.com.*"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: maps
+          region: nigeria
+        annotations:
+          summary: "Google Maps API issues"
+          description: "Google Maps API is unreachable. Nigerian location services affected."
+
+  # Custom Nigerian Business Metrics
+  - name: nigeria_business_metrics
+    rules:
+      - alert: LowDailyTransactionVolume
+        expr: |
+          sum(increase(tradebybarter_transactions_total{currency="NGN"}[24h])) < 100
+          and nigeria:is_business_hours == 1
+        for: 1h
+        labels:
+          severity: warning
+          service: business
+          region: nigeria
+        annotations:
+          summary: "Low daily transaction volume in Nigeria"
+          description: "Only {{ $value }} transactions in the last 24 hours. Expected > 100."
+          
+      - alert: HighUserChurnRate
+        expr: |
+          (rate(tradebybarter_user_signups_total{country="NG"}[24h]) - 
+           rate(tradebybarter_active_users_total{country="NG"}[24h])) /
+          rate(tradebybarter_user_signups_total{country="NG"}[24h]) > 0.5
+        for: 2h
+        labels:
+          severity: warning
+          service: business
+          region: nigeria
+        annotations:
+          summary: "High user churn rate in Nigeria"
+          description: "User churn rate is {{ $value | humanizePercentage }}. Investigate user experience."

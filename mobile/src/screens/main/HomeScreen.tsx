@@ -1,0 +1,312 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  FlatList,
+  RefreshControl,
+  StatusBar,
+  TouchableOpacity,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { COLORS, TYPOGRAPHY } from '@/constants';
+import { Listing } from '@/types';
+import { ProductCard, SearchBar, CategoryFilter } from '@/components/common';
+import { Button, Loading } from '@/components/ui';
+
+// Mock data - would come from API
+const mockListings: Listing[] = [
+  {
+    id: '1',
+    title: 'Wireless Headphones',
+    description: 'High-quality wireless headphones in excellent condition',
+    category: 'Electronics',
+    condition: 'like-new',
+    images: ['https://example.com/headphones.jpg'],
+    user: {
+      id: '1',
+      email: 'user@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      isVerified: true,
+      isEmailVerified: true,
+      isPhoneVerified: true,
+      rating: 4.8,
+      totalTrades: 25,
+      joinedAt: '2024-01-01',
+      lastSeen: '2024-07-01',
+    },
+    location: {
+      state: 'Lagos',
+      city: 'Ikeja',
+    },
+    status: 'active',
+    tags: ['audio', 'bluetooth'],
+    views: 45,
+    favoritesCount: 8,
+    isFavorited: false,
+    createdAt: '2024-07-01',
+    updatedAt: '2024-07-01',
+  },
+  // Add more mock listings...
+];
+
+export const HomeScreen: React.FC = () => {
+  const [listings, setListings] = useState<Listing[]>(mockListings);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadFeaturedListings();
+  }, []);
+
+  const loadFeaturedListings = async () => {
+    setIsLoading(true);
+    try {
+      // API call would go here
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      setListings(mockListings);
+    } catch (error) {
+      console.error('Error loading listings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await loadFeaturedListings();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    // Implement search logic
+    console.log('Search:', query);
+  };
+
+  const handleCategorySelect = (category: string) => {
+    setSelectedCategory(category);
+    // Implement category filtering
+    console.log('Category:', category);
+  };
+
+  const handleListingPress = (listing: Listing) => {
+    // Navigate to listing detail
+    console.log('Navigate to listing:', listing.id);
+  };
+
+  const handleFavoritePress = (listing: Listing) => {
+    // Toggle favorite
+    console.log('Toggle favorite:', listing.id);
+  };
+
+  const renderListingItem = ({ item, index }: { item: Listing; index: number }) => (
+    <ProductCard
+      listing={item}
+      onPress={() => handleListingPress(item)}
+      onFavorite={() => handleFavoritePress(item)}
+      variant="grid"
+      style={index % 2 === 0 ? { marginRight: 8 } : { marginLeft: 8 }}
+    />
+  );
+
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <View style={styles.headerTop}>
+        <Text style={styles.appName}>TradeByBarter</Text>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity style={styles.iconButton}>
+            <Ionicons name="notifications-outline" size={24} color={COLORS.neutral.dark} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton}>
+            <Ionicons name="person-outline" size={24} color={COLORS.neutral.dark} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <SearchBar
+        placeholder="Search for items"
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        onSubmit={handleSearch}
+        showFilterButton={true}
+        style={styles.searchBar}
+      />
+
+      <CategoryFilter
+        selectedCategory={selectedCategory}
+        onCategorySelect={handleCategorySelect}
+        style={styles.categoryFilter}
+      />
+    </View>
+  );
+
+  const renderQuickActions = () => (
+    <View style={styles.quickActions}>
+      <Text style={styles.sectionTitle}>Quick Actions</Text>
+      <View style={styles.actionButtons}>
+        <Button
+          title="Post Item"
+          onPress={() => console.log('Navigate to create listing')}
+          variant="primary"
+          style={styles.actionButton}
+          icon={<Ionicons name="add" size={20} color="#FFFFFF" />}
+        />
+        <Button
+          title="Browse All"
+          onPress={() => console.log('Navigate to feed')}
+          variant="outline"
+          style={styles.actionButton}
+          icon={<Ionicons name="grid-outline" size={20} color={COLORS.primary.DEFAULT} />}
+        />
+      </View>
+    </View>
+  );
+
+  if (isLoading && listings.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Loading text="Loading featured items..." />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#FFFFFF"
+        translucent={false}
+      />
+      
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={[COLORS.primary.DEFAULT]}
+            tintColor={COLORS.primary.DEFAULT}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {renderHeader()}
+        {renderQuickActions()}
+
+        {/* Featured Listings */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Featured Items</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAllText}>See all</Text>
+            </TouchableOpacity>
+          </View>
+
+          <FlatList
+            data={listings}
+            renderItem={renderListingItem}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            scrollEnabled={false}
+            contentContainerStyle={styles.listingsGrid}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  header: {
+    backgroundColor: '#FFFFFF',
+    paddingBottom: 16,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  appName: {
+    fontSize: TYPOGRAPHY.fontSize.xl,
+    fontWeight: '700',
+    color: COLORS.neutral.dark,
+    fontFamily: TYPOGRAPHY.fontFamily.inter,
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.neutral.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchBar: {
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  categoryFilter: {
+    marginBottom: 8,
+  },
+  quickActions: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: COLORS.neutral.light,
+    marginBottom: 16,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+  },
+  section: {
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: TYPOGRAPHY.fontSize.lg,
+    fontWeight: '600',
+    color: COLORS.neutral.dark,
+    fontFamily: TYPOGRAPHY.fontFamily.inter,
+  },
+  seeAllText: {
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: COLORS.primary.DEFAULT,
+    fontFamily: TYPOGRAPHY.fontFamily.inter,
+    fontWeight: '500',
+  },
+  listingsGrid: {
+    gap: 16,
+  },
+});
+
+export default HomeScreen;

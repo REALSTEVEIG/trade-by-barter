@@ -1,0 +1,10 @@
+import { ValidationOptions } from 'class-validator';
+export declare function IsNigerianPhone(validationOptions?: ValidationOptions): (object: Object, propertyName: string) => void;
+export declare function IsNigerianBankAccount(validationOptions?: ValidationOptions): (object: Object, propertyName: string) => void;
+export declare function IsNigerianBankCode(validationOptions?: ValidationOptions): (object: Object, propertyName: string) => void;
+export declare function IsAmountInKobo(validationOptions?: ValidationOptions): (object: Object, propertyName: string) => void;
+export declare function IsMinimumAmount(minAmount: number, validationOptions?: ValidationOptions): (object: Object, propertyName: string) => void;
+export declare function IsMaximumAmount(maxAmount: number, validationOptions?: ValidationOptions): (object: Object, propertyName: string) => void;
+export declare function IsValidUUID(validationOptions?: ValidationOptions): (object: Object, propertyName: string) => void;
+export declare const GetUserId: (...dataOrPipes: unknown[]) => ParameterDecorator;
+export declare const GetValidatedUser: (...dataOrPipes: (string | import("@nestjs/common").PipeTransform<any, any> | import("@nestjs/common").Type<import("@nestjs/common").PipeTransform<any, any>> | undefined)[]) => ParameterDecorator;

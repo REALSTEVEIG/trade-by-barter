@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "TradeByBarter",
+    "slug": "tradebybarter-mobile",
+    "description": "Nigerian barter marketplace - Trade anything, anywhere",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "scheme": "tradebybarter",
+    "platforms": ["ios", "android"],
+    "jsEngine": "hermes",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1E3A8A"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tradebybarter.mobile",
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "NSCameraUsageDescription": "TradeByBarter needs camera access to take photos of items you want to trade",
+        "NSPhotoLibraryUsageDescription": "TradeByBarter needs photo library access to select images for your listings",
+        "NSLocationWhenInUseUsageDescription": "TradeByBarter uses your location to show nearby listings and improve your trading experience",
+        "NSFaceIDUsageDescription": "TradeByBarter uses Face ID for secure authentication",
+        "NSMicrophoneUsageDescription": "TradeByBarter needs microphone access for voice messages in chat"
+      }
+    },
+    "android": {
+      "package": "com.tradebybarter.mobile",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "RECORD_AUDIO",
+        "VIBRATE",
+        "USE_FINGERPRINT",
+        "USE_BIOMETRIC"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1E3A8A"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "tradebybarter-mobile"
+      }
+    }
+  }
+}

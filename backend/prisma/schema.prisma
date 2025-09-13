@@ -1,0 +1,1356 @@
+// TradeByBarter Prisma Schema - Nigerian Barter Marketplace
+// All monetary values are stored in kobo (Nigerian subunit)
+// 1 Naira = 100 kobo
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model with Nigerian context
+model User {
+  id                  String              @id @default(uuid()) @db.Uuid
+  email               String              @unique
+  phoneNumber         String              @unique // Nigerian format: +2348012345678
+  password            String              // Argon2 hashed password
+  firstName           String
+  lastName            String
+  displayName         String?
+  profileImageUrl     String?
+  isPhoneVerified     Boolean             @default(false)
+  isEmailVerified     Boolean             @default(false)
+  city                String              // Nigerian cities
+  state               String              // Nigerian states
+  address             String?
+  dateOfBirth         DateTime?
+  isActive            Boolean             @default(true)
+  isBlocked           Boolean             @default(false)
+  refreshToken        String?             // JWT refresh token
+  refreshTokenExpiresAt DateTime?         // Refresh token expiry
+  phoneOtp            String?             // Phone verification OTP
+  phoneOtpExpiresAt   DateTime?           // OTP expiry time
+  lastActiveAt        DateTime            @default(now())
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Relationships
+  wallet              Wallet?
+  listings            Listing[]
+  favorites           Favorite[]
+  sentOffers          Offer[]             @relation("OfferSender")
+  receivedOffers      Offer[]             @relation("OfferReceiver")
+  sentTransactions    Transaction[]       @relation("TransactionSender")
+  receivedTransactions Transaction[]      @relation("TransactionReceiver")
+  payments            Payment[]
+  buyerEscrows        Escrow[]            @relation("EscrowBuyer")
+  sellerEscrows       Escrow[]            @relation("EscrowSeller")
+  sentChats           Chat[]              @relation("ChatSender")
+  receivedChats       Chat[]              @relation("ChatReceiver")
+  sentMessages        Message[]
+  sentReviews         Review[]            @relation("ReviewSender")
+  receivedReviews     Review[]            @relation("ReviewReceiver")
+  verifications       Verification[]
+  notifications       Notification[]
+  adminAudits         AdminAudit[]
+  media               Media[]
+  storageQuota        UserStorageQuota?
+  
+  // Admin reporting relationships
+  reportsMade         UserReport[]        @relation("UserReporter")
+  reportsReceived     UserReport[]        @relation("UserReported")
+  contentReports      ContentReport[]     @relation("ContentReporter")
+
+  @@index([phoneNumber])
+  @@index([email])
+  @@index([city, state])
+  @@index([isActive, isBlocked])
+  @@index([lastActiveAt])
+}
+
+// Listing model with categories and pricing
+model Listing {
+  id                  String              @id @default(uuid()) @db.Uuid
+  title               String
+  description         String
+  category            ListingCategory
+  subcategory         String?
+  condition           ItemCondition
+  priceInKobo         Int?                // null for swap-only items
+  isSwapOnly          Boolean             @default(false)
+  acceptsCash         Boolean             @default(true)
+  acceptsSwap         Boolean             @default(true)
+  swapPreferences     String[]            // Array of preferred categories/items
+  city                String
+  state               String
+  specificLocation    String?
+  status              ListingStatus       @default(DRAFT)
+  isActive            Boolean             @default(true)
+  isFeatured          Boolean             @default(false)
+  viewCount           Int                 @default(0)
+  favoriteCount       Int                 @default(0)
+  expiresAt           DateTime?           // Optional listing expiration
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Relationships
+  userId              String              @db.Uuid
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media               Media[]
+  offers              Offer[]
+  offeredInOffers     OfferListing[]
+  reviews             Review[]
+  favorites           Favorite[]
+
+  @@index([userId])
+  @@index([category])
+  @@index([city, state])
+  @@index([status, isActive, isFeatured])
+  @@index([priceInKobo])
+  @@index([createdAt])
+  @@index([title, description]) // For full-text search
+}
+
+// Offer model supporting cash top-up and swap combinations
+model Offer {
+  id                  String              @id @default(uuid()) @db.Uuid
+  offerType           OfferType
+  cashAmountInKobo    Int?                // Cash component in kobo
+  message             String?
+  status              OfferStatus         @default(PENDING)
+  expiresAt           DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Counteroffer support
+  parentOfferId       String?             @db.Uuid
+  parentOffer         Offer?              @relation("OfferCounters", fields: [parentOfferId], references: [id])
+  counterOffers       Offer[]             @relation("OfferCounters")
+  
+  // Relationships
+  senderId            String              @db.Uuid
+  sender              User                @relation("OfferSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId          String              @db.Uuid
+  receiver            User                @relation("OfferReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  listingId           String              @db.Uuid
+  listing             Listing             @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  offeredListings     OfferListing[]      // For swap/hybrid offers
+  transactions        Transaction[]
+  escrows             Escrow[]
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([listingId])
+  @@index([parentOfferId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Offer listings junction table for swap/hybrid offers
+model OfferListing {
+  id                  String              @id @default(uuid()) @db.Uuid
+  createdAt           DateTime            @default(now())
+  
+  // Relationships
+  offerId             String              @db.Uuid
+  offer               Offer               @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  listingId           String              @db.Uuid
+  listing             Listing             @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([offerId, listingId])
+  @@index([offerId])
+  @@index([listingId])
+}
+
+// Transaction model for payment tracking
+model Transaction {
+  id                  String              @id @default(uuid()) @db.Uuid
+  type                TransactionType
+  amountInKobo        Int
+  status              TransactionStatus   @default(PENDING)
+  paymentMethod       PaymentMethod?
+  paymentReference    String?             @unique
+  paymentProvider     PaymentProvider?
+  escrowReleased      Boolean             @default(false)
+  escrowReleasedAt    DateTime?
+  failureReason       String?
+  processingFee       Int?                // Platform fee in kobo
+  description         String?             // Transaction description
+  metadata            Json?               // Additional transaction data
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Relationships
+  senderId            String              @db.Uuid
+  sender              User                @relation("TransactionSender", fields: [senderId], references: [id])
+  receiverId          String              @db.Uuid
+  receiver            User                @relation("TransactionReceiver", fields: [receiverId], references: [id])
+  offerId             String?             @db.Uuid
+  offer               Offer?              @relation(fields: [offerId], references: [id])
+  escrowId            String?             @db.Uuid
+  escrow              Escrow?             @relation(fields: [escrowId], references: [id])
+  paymentId           String?             @db.Uuid
+  payment             Payment?            @relation(fields: [paymentId], references: [id])
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([offerId])
+  @@index([escrowId])
+  @@index([paymentId])
+  @@index([status])
+  @@index([paymentReference])
+  @@index([createdAt])
+}
+
+// Wallet model for user balances
+model Wallet {
+  id                  String              @id @default(uuid()) @db.Uuid
+  balanceInKobo       Int                 @default(0)
+  escrowBalanceInKobo Int                 @default(0)
+  totalEarnedInKobo   Int                 @default(0)
+  totalSpentInKobo    Int                 @default(0)
+  isActive            Boolean             @default(true)
+  pin                 String?             // Hashed wallet PIN
+  lastTransactionAt   DateTime?           // Last transaction timestamp
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Relationships
+  userId              String              @unique @db.Uuid
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([lastTransactionAt])
+}
+
+// Payment model for payment processing
+model Payment {
+  id                  String              @id @default(uuid()) @db.Uuid
+  reference           String              @unique // Payment provider reference
+  amountInKobo        Int
+  currency            String              @default("NGN")
+  status              PaymentStatus       @default(PENDING)
+  paymentMethod       PaymentMethod
+  paymentProvider     PaymentProvider
+  channel             String?             // card, bank_transfer, mobile_money, ussd
+  authorizationCode   String?             // For card payments
+  customerEmail       String?
+  customerPhone       String?
+  feeInKobo           Int?                // Payment provider fee
+  paidAt              DateTime?
+  failureReason       String?
+  metadata            Json?               // Additional payment data
+  webhookVerified     Boolean             @default(false)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Relationships
+  userId              String              @db.Uuid
+  user                User                @relation(fields: [userId], references: [id])
+  transactions        Transaction[]
+
+  @@index([userId])
+  @@index([reference])
+  @@index([status])
+  @@index([paymentProvider])
+  @@index([createdAt])
+}
+
+// Escrow model for secure trade transactions
+model Escrow {
+  id                  String              @id @default(uuid()) @db.Uuid
+  reference           String              @unique // Escrow reference
+  amountInKobo        Int                 // Total escrow amount
+  feeInKobo           Int                 // Escrow service fee (2.5%)
+  status              EscrowStatus        @default(CREATED)
+  description         String?
+  releaseCondition    String?             // Conditions for release
+  disputeReason       String?             // Reason for dispute if any
+  expiresAt           DateTime?           // Auto-release date
+  releasedAt          DateTime?
+  disputeOpenedAt     DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Relationships
+  buyerId             String              @db.Uuid
+  buyer               User                @relation("EscrowBuyer", fields: [buyerId], references: [id])
+  sellerId            String              @db.Uuid
+  seller              User                @relation("EscrowSeller", fields: [sellerId], references: [id])
+  offerId             String              @db.Uuid
+  offer               Offer               @relation(fields: [offerId], references: [id])
+  transactions        Transaction[]
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([offerId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([createdAt])
+}
+
+// Chat model for communication
+model Chat {
+  id                  String              @id @default(uuid()) @db.Uuid
+  lastMessageAt       DateTime            @default(now())
+  isActive            Boolean             @default(true)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Relationships
+  senderId            String              @db.Uuid
+  sender              User                @relation("ChatSender", fields: [senderId], references: [id])
+  receiverId          String              @db.Uuid
+  receiver            User                @relation("ChatReceiver", fields: [receiverId], references: [id])
+  messages            Message[]
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([lastMessageAt])
+}
+
+// Message model for chat messages
+model Message {
+  id                  String              @id @default(uuid()) @db.Uuid
+  content             String
+  messageType         MessageType         @default(TEXT)
+  isRead              Boolean             @default(false)
+  readAt              DateTime?
+  isDeleted           Boolean             @default(false)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Relationships
+  senderId            String              @db.Uuid
+  sender              User                @relation(fields: [senderId], references: [id])
+  chatId              String              @db.Uuid
+  chat                Chat                @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  media               Media[]
+
+  @@index([senderId])
+  @@index([chatId])
+  @@index([createdAt])
+  @@index([isRead])
+}
+
+// Review model for ratings and feedback
+model Review {
+  id                  String              @id @default(uuid()) @db.Uuid
+  rating              Int                 // 1-5 stars
+  comment             String?
+  reviewType          ReviewType
+  isPublic            Boolean             @default(true)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Relationships
+  senderId            String              @db.Uuid
+  sender              User                @relation("ReviewSender", fields: [senderId], references: [id])
+  receiverId          String              @db.Uuid
+  receiver            User                @relation("ReviewReceiver", fields: [receiverId], references: [id])
+  listingId           String?             @db.Uuid
+  listing             Listing?            @relation(fields: [listingId], references: [id])
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([listingId])
+  @@index([rating])
+  @@index([createdAt])
+}
+
+// Verification model for KYC and trust badges
+model Verification {
+  id                  String              @id @default(uuid()) @db.Uuid
+  type                VerificationType
+  status              VerificationStatus  @default(PENDING)
+  documentUrl         String?
+  documentNumber      String?
+  verifiedAt          DateTime?
+  expiresAt           DateTime?
+  rejectionReason     String?
+  verifiedBy          String?             // Admin who verified
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Relationships
+  userId              String              @db.Uuid
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+}
+
+// Enhanced Media model for comprehensive file management
+model Media {
+  id                  String              @id @default(uuid()) @db.Uuid
+  filename            String              // Generated filename
+  originalName        String              // Original filename from user
+  mimeType            String              // MIME type of the file
+  size                Int                 // Size in bytes
+  url                 String              // Primary file URL
+  thumbnailUrl        String?             // Thumbnail URL for images/videos
+  
+  // Enhanced metadata
+  category            MediaCategory       @default(GENERAL)
+  entityType          MediaEntityType     @default(LISTING)
+  entityId            String?             @db.Uuid // Polymorphic reference
+  
+  // Processing information
+  status              MediaStatus         @default(UPLOADING)
+  processingJobId     String?             // Background job ID
+  processingStartedAt DateTime?
+  processingCompletedAt DateTime?
+  processingError     String?
+  
+  // File metadata
+  metadata            Json?               // Width, height, duration, etc.
+  exifData            Json?               // EXIF data (stripped for privacy)
+  
+  // Storage information
+  storageProvider     StorageProvider     @default(LOCAL)
+  storageKey          String              // Key/path in storage provider
+  storageRegion       String?             // Geographic region
+  
+  // Quality variants for images/videos
+  variants            MediaVariant[]
+  
+  // Security and validation
+  checksum            String?             // File checksum for integrity
+  isProcessed         Boolean             @default(false)
+  isSecure            Boolean             @default(true) // Passed security checks
+  moderationStatus    ModerationStatus    @default(PENDING)
+  moderationFlags     String[]            // Array of moderation flags
+  
+  // Lifecycle management
+  accessCount         Int                 @default(0)
+  lastAccessedAt      DateTime?
+  expiresAt           DateTime?           // For temporary files
+  isOrphan            Boolean             @default(false) // Not linked to any entity
+  
+  // Nigerian context
+  uploadRegion        String?             // Lagos, Abuja, Port Harcourt
+  compressionLevel    CompressionLevel    @default(MEDIUM)
+  bandwidthOptimized  Boolean             @default(true)
+  
+  // Timestamps
+  uploadedAt          DateTime            @default(now())
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // User relationship
+  userId              String              @db.Uuid
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Polymorphic relationships
+  listingId           String?             @db.Uuid
+  listing             Listing?            @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  messageId           String?             @db.Uuid
+  message             Message?            @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  // Processing jobs
+  processingJobs      MediaProcessingJob[]
+  
+  @@index([userId])
+  @@index([listingId])
+  @@index([messageId])
+  @@index([status])
+  @@index([category])
+  @@index([entityType, entityId])
+  @@index([storageProvider])
+  @@index([uploadedAt])
+  @@index([expiresAt])
+  @@index([isOrphan])
+  @@index([moderationStatus])
+  @@index([uploadRegion])
+}
+
+// Media variants for different quality levels
+model MediaVariant {
+  id                  String              @id @default(uuid()) @db.Uuid
+  quality             QualityLevel
+  url                 String
+  size                Int                 // Size in bytes
+  width               Int?                // For images/videos
+  height              Int?                // For images/videos
+  format              String              // File format (webp, mp4, etc.)
+  storageKey          String              // Storage provider key
+  
+  // Relationships
+  mediaId             String              @db.Uuid
+  media               Media               @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  
+  createdAt           DateTime            @default(now())
+  
+  @@unique([mediaId, quality])
+  @@index([mediaId])
+  @@index([quality])
+}
+
+// Background processing jobs for media
+model MediaProcessingJob {
+  id                  String              @id @default(uuid()) @db.Uuid
+  type                ProcessingJobType
+  status              JobStatus           @default(PENDING)
+  priority            JobPriority         @default(NORMAL)
+  
+  // Job configuration
+  operations          Json                // Array of operations to perform
+  options             Json?               // Job-specific options
+  
+  // Processing information
+  startedAt           DateTime?
+  completedAt         DateTime?
+  failedAt            DateTime?
+  retryCount          Int                 @default(0)
+  maxRetries          Int                 @default(3)
+  error               String?
+  progress            Int                 @default(0) // 0-100
+  
+  // Queue information
+  queueName           String              @default("media-processing")
+  jobId               String?             // Queue job ID
+  
+  // Relationships
+  mediaId             String              @db.Uuid
+  media               Media               @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  @@index([mediaId])
+  @@index([status])
+  @@index([type])
+  @@index([priority])
+  @@index([queueName])
+  @@index([createdAt])
+}
+
+// Storage usage tracking per user
+model UserStorageQuota {
+  id                  String              @id @default(uuid()) @db.Uuid
+  
+  // Quota limits (in bytes)
+  totalQuota          BigInt              @default(104857600) // 100MB default
+  usedStorage         BigInt              @default(0)
+  mediaCount          Int                 @default(0)
+  
+  // Usage by category
+  imageStorage        BigInt              @default(0)
+  videoStorage        BigInt              @default(0)
+  audioStorage        BigInt              @default(0)
+  documentStorage     BigInt              @default(0)
+  
+  // Premium features
+  isPremium           Boolean             @default(false)
+  premiumExpiry       DateTime?
+  
+  // Monitoring
+  lastCalculatedAt    DateTime            @default(now())
+  warningsSent        Int                 @default(0)
+  lastWarningSentAt   DateTime?
+  
+  // Relationships
+  userId              String              @unique @db.Uuid
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  @@index([userId])
+  @@index([isPremium])
+  @@index([usedStorage])
+}
+
+// Media analytics and monitoring
+model MediaAnalytics {
+  id                  String              @id @default(uuid()) @db.Uuid
+  date                DateTime            @db.Date
+  
+  // Upload statistics
+  totalUploads        Int                 @default(0)
+  successfulUploads   Int                 @default(0)
+  failedUploads       Int                 @default(0)
+  
+  // Storage statistics
+  totalStorageUsed    BigInt              @default(0)
+  storageByProvider   Json                // Storage usage by provider
+  storageByRegion     Json                // Storage usage by region
+  
+  // Processing statistics
+  totalProcessingJobs Int                 @default(0)
+  successfulJobs      Int                 @default(0)
+  failedJobs          Int                 @default(0)
+  avgProcessingTime   Int                 @default(0) // in milliseconds
+  
+  // File type statistics
+  imageUploads        Int                 @default(0)
+  videoUploads        Int                 @default(0)
+  audioUploads        Int                 @default(0)
+  documentUploads     Int                 @default(0)
+  
+  // Nigerian context statistics
+  lagosUploads        Int                 @default(0)
+  abujaUploads        Int                 @default(0)
+  portHarcourtUploads Int                 @default(0)
+  otherRegionUploads  Int                 @default(0)
+  
+  createdAt           DateTime            @default(now())
+  
+  @@unique([date])
+  @@index([date])
+}
+
+// Favorite model for bookmarking listings
+model Favorite {
+  id                  String              @id @default(uuid()) @db.Uuid
+  createdAt           DateTime            @default(now())
+  
+  // Relationships
+  userId              String              @db.Uuid
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId           String              @db.Uuid
+  listing             Listing             @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+  @@index([listingId])
+  @@index([createdAt])
+}
+
+// Notification model for user alerts
+model Notification {
+  id                  String              @id @default(uuid()) @db.Uuid
+  type                NotificationType
+  title               String
+  message             String
+  isRead              Boolean             @default(false)
+  readAt              DateTime?
+  data                Json?               // Additional notification data
+  createdAt           DateTime            @default(now())
+  
+  // Relationships
+  userId              String              @db.Uuid
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// Admin User model for separate admin authentication
+model AdminUser {
+  id                  String              @id @default(uuid()) @db.Uuid
+  email               String              @unique
+  passwordHash        String              // Argon2 hashed password
+  role                AdminRole
+  name                String
+  firstName           String?
+  lastName            String?
+  phoneNumber         String?
+  isActive            Boolean             @default(true)
+  isBlocked           Boolean             @default(false)
+  lastLoginAt         DateTime?
+  lastLoginIp         String?
+  loginAttempts       Int                 @default(0)
+  lockedUntil         DateTime?
+  
+  // Two-Factor Authentication
+  twoFactorEnabled    Boolean             @default(false)
+  twoFactorSecret     String?
+  twoFactorBackupCodes String[]           @default([])
+  
+  // Security
+  ipWhitelist         String[]            @default([])
+  sessionToken        String?
+  sessionExpiresAt    DateTime?
+  passwordChangedAt   DateTime            @default(now())
+  
+  // Audit and tracking
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  createdById         String?             @db.Uuid
+  createdBy           AdminUser?          @relation("AdminCreation", fields: [createdById], references: [id])
+  createdAdmins       AdminUser[]         @relation("AdminCreation")
+  
+  // Relationships
+  auditLogs           AdminAuditLog[]
+  resolvedReports     UserReport[]        @relation("ReportResolvedBy")
+  resolvedContentReports ContentReport[]  @relation("ContentReportResolvedBy")
+  createdModerationRules ModerationRule[]
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive, isBlocked])
+  @@index([lastLoginAt])
+  @@index([createdById])
+}
+
+// Enhanced AdminAuditLog model for comprehensive audit tracking
+model AdminAuditLog {
+  id                  String              @id @default(uuid()) @db.Uuid
+  action              AdminAction
+  targetType          AuditTargetType
+  targetId            String?             @db.Uuid
+  description         String              // Human-readable description
+  details             Json?               // Detailed action data
+  ipAddress           String?
+  userAgent           String?
+  
+  // Before/after data for audit trail
+  previousData        Json?
+  newData             Json?
+  
+  // Context
+  reason              String?
+  notes               String?
+  severity            AuditSeverity       @default(MEDIUM)
+  
+  // Timestamps
+  createdAt           DateTime            @default(now())
+  
+  // Relationships
+  adminId             String              @db.Uuid
+  admin               AdminUser           @relation(fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@index([targetType, targetId])
+  @@index([action])
+  @@index([severity])
+  @@index([createdAt])
+}
+
+// User Report model for user-to-user reporting
+model UserReport {
+  id                  String              @id @default(uuid()) @db.Uuid
+  reportType          UserReportType
+  reason              String
+  details             String?
+  evidence            Json?               // Screenshots, links, etc.
+  status              ReportStatus        @default(PENDING)
+  priority            ReportPriority      @default(MEDIUM)
+  
+  // Resolution
+  resolution          String?
+  resolutionDetails   Json?
+  resolvedAt          DateTime?
+  
+  // Escalation
+  escalatedAt         DateTime?
+  escalationReason    String?
+  
+  // Timestamps
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Relationships
+  reporterId          String              @db.Uuid
+  reporter            User                @relation("UserReporter", fields: [reporterId], references: [id])
+  reportedUserId      String              @db.Uuid
+  reportedUser        User                @relation("UserReported", fields: [reportedUserId], references: [id])
+  resolvedById        String?             @db.Uuid
+  resolvedBy          AdminUser?          @relation("ReportResolvedBy", fields: [resolvedById], references: [id])
+
+  @@index([reporterId])
+  @@index([reportedUserId])
+  @@index([status])
+  @@index([priority])
+  @@index([reportType])
+  @@index([createdAt])
+  @@index([resolvedById])
+}
+
+// Content Report model for content moderation
+model ContentReport {
+  id                  String              @id @default(uuid()) @db.Uuid
+  contentType         ContentReportType
+  contentId           String              @db.Uuid
+  reportType          ContentReportReason
+  reason              String
+  details             String?
+  evidence            Json?               // Screenshots, additional context
+  status              ReportStatus        @default(PENDING)
+  priority            ReportPriority      @default(MEDIUM)
+  
+  // Auto-detection flags
+  isAutoGenerated     Boolean             @default(false)
+  detectionMethod     String?             // AI, keyword, pattern matching
+  confidenceScore     Float?              // 0.0 to 1.0 for AI detection
+  
+  // Resolution
+  resolution          String?
+  resolutionAction    ModerationAction?
+  resolutionDetails   Json?
+  resolvedAt          DateTime?
+  
+  // Escalation
+  escalatedAt         DateTime?
+  escalationReason    String?
+  
+  // Timestamps
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Relationships
+  reporterId          String?             @db.Uuid // Nullable for auto-generated reports
+  reporter            User?               @relation("ContentReporter", fields: [reporterId], references: [id])
+  resolvedById        String?             @db.Uuid
+  resolvedBy          AdminUser?          @relation("ContentReportResolvedBy", fields: [resolvedById], references: [id])
+
+  @@index([contentType, contentId])
+  @@index([reporterId])
+  @@index([status])
+  @@index([priority])
+  @@index([reportType])
+  @@index([isAutoGenerated])
+  @@index([createdAt])
+  @@index([resolvedById])
+}
+
+// Moderation Rules for automated content filtering
+model ModerationRule {
+  id                  String              @id @default(uuid()) @db.Uuid
+  name                String
+  description         String?
+  isActive            Boolean             @default(true)
+  priority            Int                 @default(1)
+  
+  // Rule configuration
+  triggerType         ModerationTriggerType
+  triggerConfig       Json                // Configuration for the trigger
+  actionType          ModerationAction
+  actionConfig        Json?               // Configuration for the action
+  
+  // Thresholds
+  threshold           Float?              // Confidence threshold for AI rules
+  frequency           Int?                // Frequency threshold for pattern rules
+  
+  // Nigerian market specific
+  appliesToRegions    String[]            @default([]) // Nigerian states
+  appliesToCategories ListingCategory[]   @default([])
+  
+  // Metrics
+  triggerCount        Int                 @default(0)
+  actionCount         Int                 @default(0)
+  lastTriggeredAt     DateTime?
+  
+  // Timestamps
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  createdById         String              @db.Uuid
+  createdBy           AdminUser           @relation(fields: [createdById], references: [id])
+
+  @@index([isActive])
+  @@index([triggerType])
+  @@index([priority])
+  @@index([createdById])
+}
+
+// Platform Analytics for admin dashboard
+model PlatformAnalytics {
+  id                  String              @id @default(uuid()) @db.Uuid
+  date                DateTime            @db.Date
+  period              AnalyticsPeriod     @default(DAILY)
+  
+  // User metrics
+  totalUsers          Int                 @default(0)
+  activeUsers         Int                 @default(0)
+  newUsers            Int                 @default(0)
+  verifiedUsers       Int                 @default(0)
+  blockedUsers        Int                 @default(0)
+  
+  // Listing metrics
+  totalListings       Int                 @default(0)
+  activeListings      Int                 @default(0)
+  newListings         Int                 @default(0)
+  approvedListings    Int                 @default(0)
+  rejectedListings    Int                 @default(0)
+  
+  // Trade metrics
+  totalOffers         Int                 @default(0)
+  acceptedOffers      Int                 @default(0)
+  completedTrades     Int                 @default(0)
+  tradeVolumeInKobo   BigInt              @default(0)
+  averageTradeValue   Int                 @default(0)
+  
+  // Financial metrics
+  revenueInKobo       BigInt              @default(0)
+  feesCollectedInKobo BigInt              @default(0)
+  escrowVolumeInKobo  BigInt              @default(0)
+  
+  // Regional metrics (Nigerian states)
+  regionalData        Json                // State-wise breakdown
+  
+  // Content moderation metrics
+  totalReports        Int                 @default(0)
+  resolvedReports     Int                 @default(0)
+  pendingReports      Int                 @default(0)
+  moderationActions   Int                 @default(0)
+  
+  // System metrics
+  apiRequestCount     Int                 @default(0)
+  errorCount          Int                 @default(0)
+  averageResponseTime Int                 @default(0) // in milliseconds
+  uptime              Float               @default(100.0) // percentage
+  
+  createdAt           DateTime            @default(now())
+
+  @@unique([date, period])
+  @@index([date])
+  @@index([period])
+}
+
+// System Health monitoring
+model SystemHealth {
+  id                  String              @id @default(uuid()) @db.Uuid
+  timestamp           DateTime            @default(now())
+  
+  // Service status
+  apiStatus           ServiceStatus       @default(HEALTHY)
+  databaseStatus      ServiceStatus       @default(HEALTHY)
+  redisStatus         ServiceStatus       @default(HEALTHY)
+  storageStatus       ServiceStatus       @default(HEALTHY)
+  paymentStatus       ServiceStatus       @default(HEALTHY)
+  
+  // Performance metrics
+  cpuUsage            Float               // Percentage
+  memoryUsage         Float               // Percentage
+  diskUsage           Float               // Percentage
+  
+  // Database metrics
+  dbConnections       Int
+  dbSlowQueries       Int
+  dbErrors            Int
+  
+  // API metrics
+  requestsPerMinute   Int
+  averageResponseTime Int                 // milliseconds
+  errorRate           Float               // percentage
+  
+  // Queue metrics
+  queueSize           Int
+  failedJobs          Int
+  processingTime      Int                 // average processing time
+  
+  // Alerts
+  alerts              Json?               // Active alerts
+  alertCount          Int                 @default(0)
+  criticalAlerts      Int                 @default(0)
+  
+  @@index([timestamp])
+  @@index([apiStatus])
+  @@index([alertCount])
+}
+
+// Legacy AdminAudit model (keeping for backward compatibility)
+model AdminAudit {
+  id                  String              @id @default(uuid()) @db.Uuid
+  action              AdminAction
+  targetType          AuditTargetType
+  targetId            String              @db.Uuid
+  reason              String?
+  previousData        Json?
+  newData             Json?
+  createdAt           DateTime            @default(now())
+  
+  // Relationships
+  adminId             String              @db.Uuid
+  admin               User                @relation(fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@index([targetType, targetId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// Enums for type safety and consistency
+enum ListingCategory {
+  ELECTRONICS
+  FASHION
+  VEHICLES
+  FURNITURE
+  APPLIANCES
+  BOOKS
+  SPORTS
+  TOYS
+  BEAUTY
+  HOME_GARDEN
+  BOOKS_EDUCATION
+  HEALTH_BEAUTY
+  SPORTS_RECREATION
+  BABY_KIDS
+  AGRICULTURE
+  SERVICES
+  ART_CRAFTS
+  MUSICAL_INSTRUMENTS
+  OTHER
+}
+
+enum ListingStatus {
+  DRAFT
+  ACTIVE
+  SOLD
+  PAUSED
+  EXPIRED
+  REMOVED
+}
+
+enum ItemCondition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+  POOR
+}
+
+enum OfferType {
+  CASH
+  SWAP
+  HYBRID
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COUNTERED
+  WITHDRAWN
+  EXPIRED
+}
+
+enum TransactionType {
+  WALLET_TOPUP
+  WALLET_WITHDRAWAL
+  ESCROW_DEPOSIT
+  ESCROW_RELEASE
+  ESCROW_REFUND
+  TRANSFER_SENT
+  TRANSFER_RECEIVED
+  FEE_CHARGE
+  REFUND
+  PURCHASE
+  SALE
+  WITHDRAWAL
+  DEPOSIT
+}
+
+enum TransactionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CARD
+  MOBILE_MONEY
+  USSD
+  WALLET
+}
+
+enum PaymentProvider {
+  PAYSTACK
+  FLUTTERWAVE
+  INTERSWITCH
+  MOCK_PROVIDER
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum EscrowStatus {
+  CREATED
+  FUNDED
+  DISPUTED
+  RELEASED
+  REFUNDED
+  EXPIRED
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  AUDIO
+  VIDEO
+  DOCUMENT
+  LOCATION
+}
+
+enum ReviewType {
+  BUYER_TO_SELLER
+  SELLER_TO_BUYER
+  GENERAL
+}
+
+enum VerificationType {
+  PHONE
+  EMAIL
+  BVN
+  NIN
+  DRIVERS_LICENSE
+  VOTERS_CARD
+  PASSPORT
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum NotificationType {
+  OFFER_RECEIVED
+  OFFER_ACCEPTED
+  OFFER_REJECTED
+  COUNTEROFFER_RECEIVED
+  OFFER_EXPIRED
+  OFFER_WITHDRAWN
+  MESSAGE_RECEIVED
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
+  WALLET_TOPUP_SUCCESS
+  WALLET_TOPUP_FAILED
+  WALLET_LOW_BALANCE
+  ESCROW_CREATED
+  ESCROW_RELEASED
+  ESCROW_DISPUTED
+  TRANSFER_RECEIVED
+  REVIEW_RECEIVED
+  LISTING_APPROVED
+  LISTING_REJECTED
+  VERIFICATION_APPROVED
+  VERIFICATION_REJECTED
+  SYSTEM_ANNOUNCEMENT
+}
+
+enum AdminAction {
+  USER_BLOCKED
+  USER_UNBLOCKED
+  LISTING_APPROVED
+  LISTING_REJECTED
+  OFFER_CANCELLED
+  REVIEW_REMOVED
+  CONTENT_MODERATED
+}
+
+enum AuditTargetType {
+  USER
+  LISTING
+  OFFER
+  REVIEW
+  MESSAGE
+  TRANSACTION
+}
+
+// New enums for enhanced media management
+enum MediaCategory {
+  AVATAR
+  LISTING_IMAGE
+  CHAT_MEDIA
+  DOCUMENT
+  VERIFICATION
+  GENERAL
+}
+
+enum MediaEntityType {
+  USER
+  LISTING
+  CHAT
+  MESSAGE
+  OFFER
+  VERIFICATION
+}
+
+enum MediaStatus {
+  UPLOADING
+  PROCESSING
+  READY
+  FAILED
+  EXPIRED
+  DELETED
+}
+
+enum StorageProvider {
+  LOCAL
+  S3
+  CLOUDINARY
+  AZURE
+  GCS
+}
+
+enum QualityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  ORIGINAL
+}
+
+enum CompressionLevel {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+  MAXIMUM
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+  REVIEW_REQUIRED
+}
+
+enum ProcessingJobType {
+  RESIZE
+  COMPRESS
+  CONVERT
+  THUMBNAIL
+  WATERMARK
+  METADATA_EXTRACT
+  VIRUS_SCAN
+  CONTENT_MODERATION
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  RETRYING
+}
+
+enum JobPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// New enums for admin system
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  MODERATOR
+  SUPPORT
+  ANALYST
+}
+
+enum UserReportType {
+  HARASSMENT
+  SPAM
+  FRAUD
+  INAPPROPRIATE_CONTENT
+  FAKE_PROFILE
+  SCAM
+  PAYMENT_DISPUTE
+  TERMS_VIOLATION
+  OTHER
+}
+
+enum ContentReportType {
+  LISTING
+  MESSAGE
+  REVIEW
+  PROFILE
+  IMAGE
+  OFFER
+}
+
+enum ContentReportReason {
+  INAPPROPRIATE_CONTENT
+  SPAM
+  FRAUD
+  MISLEADING_INFORMATION
+  PROHIBITED_ITEMS
+  COPYRIGHT_VIOLATION
+  HATE_SPEECH
+  VIOLENCE
+  ADULT_CONTENT
+  FAKE_LISTING
+  PRICE_MANIPULATION
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  UNDER_REVIEW
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+  ESCALATED
+  CLOSED
+}
+
+enum ReportPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+  CRITICAL
+}
+
+enum ModerationAction {
+  NO_ACTION
+  WARNING_SENT
+  CONTENT_REMOVED
+  CONTENT_EDITED
+  USER_SUSPENDED
+  USER_BANNED
+  LISTING_HIDDEN
+  LISTING_REMOVED
+  OFFER_CANCELLED
+  ACCOUNT_RESTRICTED
+  ESCALATE_TO_ADMIN
+  REQUIRE_VERIFICATION
+}
+
+enum ModerationTriggerType {
+  KEYWORD_MATCH
+  IMAGE_ANALYSIS
+  USER_REPORTS
+  BEHAVIOR_PATTERN
+  PRICE_ANOMALY
+  FREQUENCY_LIMIT
+  AI_DETECTION
+  MANUAL_REVIEW
+}
+
+enum AuditSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AnalyticsPeriod {
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+enum ServiceStatus {
+  HEALTHY
+  DEGRADED
+  UNHEALTHY
+  MAINTENANCE
+  UNKNOWN
+}

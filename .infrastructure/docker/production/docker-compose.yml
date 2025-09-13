@@ -1,0 +1,324 @@
+version: '3.8'
+
+# TradeByBarter Production Environment - Optimized for Nigerian Deployment
+# Designed for high availability and performance in African infrastructure
+
+services:
+  # Load Balancer (NGINX)
+  nginx:
+    image: nginx:alpine
+    container_name: tradebybarter-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/ssl/certs:ro
+      - static_files:/var/www/static:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - tradebybarter-network
+    restart: unless-stopped
+    environment:
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend API (NestJS)
+  backend:
+    image: tradebybarter/backend:${BACKEND_VERSION:-latest}
+    container_name: tradebybarter-backend
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      
+      # Nigerian Payment Integration
+      - PAYSTACK_SECRET_KEY=${PAYSTACK_SECRET_KEY}
+      - PAYSTACK_PUBLIC_KEY=${PAYSTACK_PUBLIC_KEY}
+      
+      # Nigerian SMS Providers
+      - TERMII_API_KEY=${TERMII_API_KEY}
+      - SMS_DOME_API_KEY=${SMS_DOME_API_KEY}
+      
+      # File Storage (CloudFlare R2)
+      - CLOUDFLARE_R2_ACCESS_KEY=${CLOUDFLARE_R2_ACCESS_KEY}
+      - CLOUDFLARE_R2_SECRET_KEY=${CLOUDFLARE_R2_SECRET_KEY}
+      - CLOUDFLARE_R2_BUCKET=${CLOUDFLARE_R2_BUCKET}
+      - CLOUDFLARE_R2_ENDPOINT=${CLOUDFLARE_R2_ENDPOINT}
+      
+      # Nigerian Market Configuration
+      - DEFAULT_TIMEZONE=Africa/Lagos
+      - DEFAULT_CURRENCY=NGN
+      - DEFAULT_LOCALE=en-NG
+      
+      # Security Configuration
+      - SECURITY_HEADERS_ENABLED=true
+      - RATE_LIMIT_ENABLED=true
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      
+      # Performance
+      - CACHE_TTL=3600
+      - MAX_FILE_SIZE=10485760
+      - CONNECTION_POOL_SIZE=20
+      
+    volumes:
+      - ./logs/backend:/app/logs
+    depends_on:
+      - postgres
+      - redis
+      - elasticsearch
+    networks:
+      - tradebybarter-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+  # Frontend (Next.js)
+  frontend:
+    image: tradebybarter/frontend:${FRONTEND_VERSION:-latest}
+    container_name: tradebybarter-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=${PAYSTACK_PUBLIC_KEY}
+      - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+      - NEXT_PUBLIC_ENVIRONMENT=production
+      - NEXT_PUBLIC_SENTRY_DSN=${SENTRY_DSN}
+    volumes:
+      - static_files:/app/.next/static
+      - ./logs/frontend:/app/logs
+    depends_on:
+      - backend
+    networks:
+      - tradebybarter-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: tradebybarter-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS="--encoding=UTF-8 --locale=en_NG.UTF-8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./backups:/backups
+    networks:
+      - tradebybarter-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+
+  # Redis Cache
+  redis:
+    image: redis:6-alpine
+    container_name: tradebybarter-redis
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+      - ./redis/redis.conf:/etc/redis/redis.conf:ro
+    networks:
+      - tradebybarter-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.25'
+    command: redis-server /etc/redis/redis.conf --requirepass ${REDIS_PASSWORD}
+
+  # Elasticsearch for Search
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    container_name: tradebybarter-elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - node.name=tradebybarter-es-node
+      - cluster.name=tradebybarter-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - xpack.security.enabled=false
+      - xpack.monitoring.collection.enabled=true
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+      - ./elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    networks:
+      - tradebybarter-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+  # Monitoring - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: tradebybarter-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - tradebybarter-network
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+
+  # Monitoring - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: tradebybarter-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_DOMAIN=${DOMAIN}
+      - GF_SMTP_ENABLED=true
+      - GF_SMTP_HOST=${SMTP_HOST}
+      - GF_SMTP_USER=${SMTP_USER}
+      - GF_SMTP_PASSWORD=${SMTP_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - tradebybarter-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # Log Management - Fluent Bit
+  fluent-bit:
+    image: fluent/fluent-bit:latest
+    container_name: tradebybarter-fluent-bit
+    volumes:
+      - ./logs:/var/log
+      - ./monitoring/fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+    networks:
+      - tradebybarter-network
+    restart: unless-stopped
+    depends_on:
+      - elasticsearch
+
+  # Backup Service
+  backup:
+    image: tradebybarter/backup:latest
+    container_name: tradebybarter-backup
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - BACKUP_SCHEDULE="0 2 * * *"  # Daily at 2 AM WAT
+      - BACKUP_RETENTION_DAYS=30
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - S3_BUCKET=${BACKUP_S3_BUCKET}
+    volumes:
+      - ./backups:/backups
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - tradebybarter-network
+    restart: unless-stopped
+    depends_on:
+      - postgres
+
+networks:
+  tradebybarter-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  static_files:
+    driver: local
