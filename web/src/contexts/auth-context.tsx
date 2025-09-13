@@ -52,7 +52,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       const response = await authApi.getProfile();
       setState(prev => ({
         ...prev,
-        user: response.data as User,
+        user: (response as any),
         isAuthenticated: true,
         isLoading: false,
         error: null,
@@ -76,11 +76,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
       const response = await authApi.login(credentials);
-      const { user, accessToken, refreshToken } = response.data as {
-        user: User;
-        accessToken: string;
-        refreshToken: string;
-      };
+      const { user, accessToken, refreshToken } = (response as any);
 
       // Store tokens
       localStorage.setItem('accessToken', accessToken);
@@ -112,11 +108,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
       const response = await authApi.signup(data);
-      const { user, accessToken, refreshToken } = response.data as {
-        user: User;
-        accessToken: string;
-        refreshToken: string;
-      };
+      const { user, accessToken, refreshToken } = (response as any);
 
       // Store tokens
       localStorage.setItem('accessToken', accessToken);
@@ -174,7 +166,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       const response = await authApi.getProfile();
       setState(prev => ({
         ...prev,
-        user: response.data as User,
+        user: (response as any),
         error: null,
       }));
     } catch (error: any) {
