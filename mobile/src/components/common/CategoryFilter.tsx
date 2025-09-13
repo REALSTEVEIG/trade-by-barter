@@ -19,7 +19,7 @@ export interface CategoryFilterProps {
 export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   selectedCategory,
   onCategorySelect,
-  categories = PRODUCT_CATEGORIES.slice(0, 8), // Show first 8 categories
+  categories = PRODUCT_CATEGORIES.slice(0, 8).map(cat => cat.label), // Show first 8 categories
   style,
 }) => {
   const renderCategoryPill = (category: string, index: number) => {

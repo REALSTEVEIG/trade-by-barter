@@ -289,7 +289,7 @@ describe('SearchBar Component', () => {
       const input = screen.getByRole('textbox')
       
       // Type quickly
-      await user.type(input, 'fast', { delay: 1 })
+      await user.type(input, 'fast')
       
       expect(onValueChange).toHaveBeenCalledTimes(4) // One per character
     })
@@ -323,7 +323,7 @@ describe('SearchBar Component', () => {
       const onSearch = jest.fn()
       render(<SearchBar onSearch={onSearch} />)
       
-      const input = screen.getByRole('textbox')
+      screen.getByRole('textbox')
       await user.keyboard('{Enter}')
       
       expect(onSearch).toHaveBeenCalledWith('')

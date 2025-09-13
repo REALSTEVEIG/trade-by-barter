@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/contexts/auth-context';
-import { COLORS, TYPOGRAPHY } from '@/constants';
+import { COLORS, TYPOGRAPHY, SUCCESS_MESSAGES, ERROR_MESSAGES } from '@/constants';
+import { authApi } from '@/lib/api';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
 
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
+  const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -34,7 +37,72 @@ const ProfileScreen: React.FC = () => {
     );
   };
 
+  const handleAvatarPress = () => {
+    Alert.alert(
+      'Update Profile Picture',
+      'Choose how you want to update your profile picture',
+      [
+        { text: 'Take Photo', onPress: () => openImagePicker('camera') },
+        { text: 'Choose from Gallery', onPress: () => openImagePicker('library') },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
+
+  const openImagePicker = async (source: 'camera' | 'library') => {
+    try {
+      const options: ImagePicker.ImagePickerOptions = {
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      };
+
+      let result;
+      if (source === 'camera') {
+        result = await ImagePicker.launchCameraAsync(options);
+      } else {
+        result = await ImagePicker.launchImageLibraryAsync(options);
+      }
+
+      if (!result.canceled && result.assets[0]) {
+        await updateProfilePicture(result.assets[0]);
+      }
+    } catch (error) {
+      console.error('Image picker error:', error);
+      Alert.alert('Error', 'Failed to open image picker');
+    }
+  };
+
+  const updateProfilePicture = async (asset: ImagePicker.ImagePickerAsset) => {
+    setIsUpdatingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('profilePicture', {
+        uri: asset.uri,
+        type: 'image/jpeg',
+        name: `profile_${Date.now()}.jpg`
+      } as any);
+
+      await authApi.updateProfile(formData);
+      await refreshUser();
+      
+      Alert.alert('Success', SUCCESS_MESSAGES.PROFILE_UPDATED);
+    } catch (error: any) {
+      console.error('Error updating profile picture:', error);
+      Alert.alert('Error', error.response?.data?.message || ERROR_MESSAGES.SERVER_ERROR);
+    } finally {
+      setIsUpdatingAvatar(false);
+    }
+  };
+
   const menuItems = [
+    {
+      icon: 'person-outline',
+      title: 'Edit Profile',
+      subtitle: 'Update your profile information',
+      onPress: () => Alert.alert('Coming Soon', 'Profile editing will be available soon!'),
+    },
     {
       icon: 'list-outline',
       title: 'My Listings',
@@ -110,12 +178,25 @@ const ProfileScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Profile Header */}
         <View style={styles.header}>
-          <Avatar
-            source={user?.avatar ? { uri: user.avatar } : undefined}
-            name={user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email}
-            size="xl"
-            style={styles.avatar}
-          />
+          <TouchableOpacity
+            onPress={handleAvatarPress}
+            style={styles.avatarContainer}
+            disabled={isUpdatingAvatar}
+          >
+            <Avatar
+              source={user?.avatar ? { uri: user.avatar } : undefined}
+              name={user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email}
+              size="xl"
+              style={styles.avatar}
+            />
+            <View style={styles.cameraIcon}>
+              {isUpdatingAvatar ? (
+                <Ionicons name="refresh" size={16} color="white" />
+              ) : (
+                <Ionicons name="camera" size={16} color="white" />
+              )}
+            </View>
+          </TouchableOpacity>
           <Text style={styles.name}>
             {user?.firstName ? `${user.firstName} ${user.lastName}` : 'User'}
           </Text>
@@ -175,8 +256,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: COLORS.primary[50],
   },
-  avatar: {
+  avatarContainer: {
+    position: 'relative',
     marginBottom: 16,
+  },
+  avatar: {
+    // marginBottom: 16,
+  },
+  cameraIcon: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    backgroundColor: COLORS.primary.DEFAULT,
+    borderRadius: 16,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'white',
   },
   name: {
     fontSize: TYPOGRAPHY.fontSize.xl,

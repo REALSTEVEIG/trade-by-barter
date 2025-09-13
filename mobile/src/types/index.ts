@@ -52,7 +52,11 @@ export interface SignupData {
   password: string;
   firstName: string;
   lastName: string;
-  phone?: string;
+  phoneNumber: string;
+  state: string;
+  city: string;
+  displayName?: string;
+  address?: string;
 }
 
 export interface AuthTokens {

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { COLORS, TYPOGRAPHY } from '@/constants';
 import { Listing } from '@/types';
 import { ProductCard, SearchBar, CategoryFilter } from '@/components/common';
@@ -54,6 +55,7 @@ const mockListings: Listing[] = [
 ];
 
 export const HomeScreen: React.FC = () => {
+  const navigation = useNavigation();
   const [listings, setListings] = useState<Listing[]>(mockListings);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -123,10 +125,16 @@ export const HomeScreen: React.FC = () => {
       <View style={styles.headerTop}>
         <Text style={styles.appName}>TradeByBarter</Text>
         <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconButton}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => navigation.navigate('Notifications' as any)}
+          >
             <Ionicons name="notifications-outline" size={24} color={COLORS.neutral.dark} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => navigation.navigate('Profile' as any)}
+          >
             <Ionicons name="person-outline" size={24} color={COLORS.neutral.dark} />
           </TouchableOpacity>
         </View>

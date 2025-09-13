@@ -1,12 +1,7 @@
-import * as React from 'react';
-import { Metadata } from 'next';
-import ChatPage from '@/components/pages/chat-page';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Messages - TradeByBarter',
-  description: 'Chat with other traders and manage your conversations.',
-  keywords: ['chat', 'messages', 'communication', 'trading'],
-};
+import * as React from 'react';
+import ChatPage from '@/components/pages/chat-page';
 
 export default function Chat(): React.ReactElement {
   return <ChatPage />;

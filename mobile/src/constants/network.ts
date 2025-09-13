@@ -2,20 +2,16 @@ import { Platform } from 'react-native';
 
 // Network configuration for different environments
 const getBaseURL = (): string => {
-  // Production environment
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
-  }
-
-  // Development environment - use simple fallback without expo-constants
-  // For development, default to localhost with platform-specific handling
+  // For now, use simple environment detection without expo-constants to avoid TurboModule issues
+  // In production, you can set this via app config or build-time environment variables
+  
+  // Development environment with platform-specific handling
   if (Platform.OS === 'android') {
     // Android emulator uses 10.0.2.2 to access host localhost
     return 'http://10.0.2.2:4000/api/v1';
   }
   
-  // iOS simulator and physical devices can use localhost for now
-  // For physical devices, user can override with EXPO_PUBLIC_API_URL
+  // iOS simulator and physical devices can use localhost
   return 'http://localhost:4000/api/v1';
 };
 
@@ -39,10 +35,10 @@ export const ENV_INFO = {
   isProduction: !__DEV__,
   platform: Platform.OS,
   
-  // Helper to check if running on physical device (simplified without expo-constants)
+  // Helper to check if running on physical device (simplified to avoid TurboModule issues)
   isPhysicalDevice: () => {
     // For now, assume simulator for development
-    // This can be enhanced later with a safer expo-constants import
+    // This can be enhanced later with a safer approach
     return false;
   },
 };

@@ -1,428 +1,74 @@
-import { NigerianState } from '@/types';
-
-// Export network configuration
-export * from './network';
-
-// App Configuration
-export const APP_CONFIG = {
-  NAME: 'TradeByBarter',
-  VERSION: '1.0.0',
-  DESCRIPTION: 'Nigerian barter marketplace - Trade anything, anywhere',
-  SCHEME: 'tradebybarter',
-  BUNDLE_ID: 'com.tradebybarter.mobile',
-  
-  // API
-  API_TIMEOUT: 10000,
-  RETRY_ATTEMPTS: 3,
-  CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
-  
-  // Pagination
-  DEFAULT_PAGE_SIZE: 20,
-  MAX_PAGE_SIZE: 50,
-  
-  // Media
-  MAX_IMAGE_SIZE: 10 * 1024 * 1024, // 10MB
-  MAX_IMAGES_PER_LISTING: 8,
-  IMAGE_QUALITY: 0.8,
-  THUMBNAIL_SIZE: { width: 200, height: 200 },
-  
-  // Chat
-  MAX_MESSAGE_LENGTH: 1000,
-  TYPING_TIMEOUT: 3000,
-  MAX_VOICE_DURATION: 60, // seconds
-  
-  // Location
-  LOCATION_ACCURACY: 'high' as const,
-  GEOFENCE_RADIUS: 5000, // meters
-  
-  // Biometric
-  BIOMETRIC_PROMPT_TITLE: 'Authenticate',
-  BIOMETRIC_PROMPT_SUBTITLE: 'Use your biometric to access TradeByBarter',
-  BIOMETRIC_PROMPT_DESCRIPTION: 'Place your finger on the sensor or look at the camera',
-  
-  // Nigerian Specific
-  DEFAULT_CURRENCY: 'NGN',
-  DEFAULT_COUNTRY: 'NG',
-  DEFAULT_TIMEZONE: 'Africa/Lagos',
-  PHONE_NUMBER_PREFIX: '+234',
-  
-  // Features
-  FEATURES: {
-    BIOMETRIC_AUTH: true,
-    PUSH_NOTIFICATIONS: true,
-    OFFLINE_MODE: true,
-    VOICE_MESSAGES: true,
-    LOCATION_SERVICES: true,
-    CAMERA_INTEGRATION: true,
-    SOCIAL_LOGIN: true,
-    PAYMENT_INTEGRATION: true,
-  },
-};
-
-// Nigerian States and Cities
-export const NIGERIAN_STATES: NigerianState[] = [
-  {
-    name: 'Abia',
-    code: 'AB',
-    cities: ['Umuahia', 'Aba', 'Arochukwu', 'Ohafia', 'Ukwa']
-  },
-  {
-    name: 'Adamawa',
-    code: 'AD',
-    cities: ['Yola', 'Mubi', 'Jimeta', 'Numan', 'Ganye']
-  },
-  {
-    name: 'Akwa Ibom',
-    code: 'AK',
-    cities: ['Uyo', 'Ikot Ekpene', 'Eket', 'Oron', 'Abak']
-  },
-  {
-    name: 'Anambra',
-    code: 'AN',
-    cities: ['Awka', 'Onitsha', 'Nnewi', 'Ekwulobia', 'Agulu']
-  },
-  {
-    name: 'Bauchi',
-    code: 'BA',
-    cities: ['Bauchi', 'Azare', 'Misau', 'Jama\'are', 'Katagum']
-  },
-  {
-    name: 'Bayelsa',
-    code: 'BY',
-    cities: ['Yenagoa', 'Brass', 'Ogbia', 'Sagbama', 'Nembe']
-  },
-  {
-    name: 'Benue',
-    code: 'BE',
-    cities: ['Makurdi', 'Gboko', 'Otukpo', 'Katsina-Ala', 'Vandeikya']
-  },
-  {
-    name: 'Borno',
-    code: 'BO',
-    cities: ['Maiduguri', 'Biu', 'Bama', 'Gwoza', 'Dikwa']
-  },
-  {
-    name: 'Cross River',
-    code: 'CR',
-    cities: ['Calabar', 'Ugep', 'Ogoja', 'Ikom', 'Obudu']
-  },
-  {
-    name: 'Delta',
-    code: 'DE',
-    cities: ['Asaba', 'Warri', 'Sapele', 'Ughelli', 'Agbor']
-  },
-  {
-    name: 'Ebonyi',
-    code: 'EB',
-    cities: ['Abakaliki', 'Afikpo', 'Onueke', 'Ezza', 'Ikwo']
-  },
-  {
-    name: 'Edo',
-    code: 'ED',
-    cities: ['Benin City', 'Auchi', 'Ekpoma', 'Uromi', 'Irrua']
-  },
-  {
-    name: 'Ekiti',
-    code: 'EK',
-    cities: ['Ado-Ekiti', 'Ikere', 'Oye', 'Ijero', 'Aramoko']
-  },
-  {
-    name: 'Enugu',
-    code: 'EN',
-    cities: ['Enugu', 'Nsukka', 'Oji River', 'Agbani', 'Awgu']
-  },
-  {
-    name: 'Federal Capital Territory',
-    code: 'FC',
-    cities: ['Abuja', 'Gwagwalada', 'Kuje', 'Kwali', 'Bwari']
-  },
-  {
-    name: 'Gombe',
-    code: 'GO',
-    cities: ['Gombe', 'Billiri', 'Kaltungo', 'Dukku', 'Bajoga']
-  },
-  {
-    name: 'Imo',
-    code: 'IM',
-    cities: ['Owerri', 'Orlu', 'Okigwe', 'Oguta', 'Mbaise']
-  },
-  {
-    name: 'Jigawa',
-    code: 'JI',
-    cities: ['Dutse', 'Hadejia', 'Kazaure', 'Gumel', 'Ringim']
-  },
-  {
-    name: 'Kaduna',
-    code: 'KD',
-    cities: ['Kaduna', 'Zaria', 'Kafanchan', 'Kagoro', 'Malumfashi']
-  },
-  {
-    name: 'Kano',
-    code: 'KN',
-    cities: ['Kano', 'Wudil', 'Gaya', 'Rano', 'Karaye']
-  },
-  {
-    name: 'Katsina',
-    code: 'KT',
-    cities: ['Katsina', 'Daura', 'Funtua', 'Malumfashi', 'Dutsin-Ma']
-  },
-  {
-    name: 'Kebbi',
-    code: 'KE',
-    cities: ['Birnin Kebbi', 'Argungu', 'Yauri', 'Zuru', 'Bagudo']
-  },
-  {
-    name: 'Kogi',
-    code: 'KO',
-    cities: ['Lokoja', 'Okene', 'Idah', 'Kabba', 'Ankpa']
-  },
-  {
-    name: 'Kwara',
-    code: 'KW',
-    cities: ['Ilorin', 'Offa', 'Omu-Aran', 'Lafiagi', 'Esie']
-  },
-  {
-    name: 'Lagos',
-    code: 'LA',
-    cities: ['Ikeja', 'Lagos Island', 'Victoria Island', 'Lekki', 'Surulere', 'Yaba', 'Ikoyi', 'Ajah', 'Alaba', 'Mushin', 'Agege', 'Badagry', 'Epe', 'Ikorodu']
-  },
-  {
-    name: 'Nasarawa',
-    code: 'NA',
-    cities: ['Lafia', 'Keffi', 'Akwanga', 'Nasarawa', 'Doma']
-  },
-  {
-    name: 'Niger',
-    code: 'NI',
-    cities: ['Minna', 'Bida', 'Kontagora', 'Suleja', 'New Bussa']
-  },
-  {
-    name: 'Ogun',
-    code: 'OG',
-    cities: ['Abeokuta', 'Sagamu', 'Ijebu-Ode', 'Ilaro', 'Ota']
-  },
-  {
-    name: 'Ondo',
-    code: 'ON',
-    cities: ['Akure', 'Ondo', 'Owo', 'Ikare', 'Okitipupa']
-  },
-  {
-    name: 'Osun',
-    code: 'OS',
-    cities: ['Osogbo', 'Ile-Ife', 'Ilesa', 'Ede', 'Iwo']
-  },
-  {
-    name: 'Oyo',
-    code: 'OY',
-    cities: ['Ibadan', 'Ogbomoso', 'Oyo', 'Iseyin', 'Saki']
-  },
-  {
-    name: 'Plateau',
-    code: 'PL',
-    cities: ['Jos', 'Bukuru', 'Shendam', 'Pankshin', 'Vom']
-  },
-  {
-    name: 'Rivers',
-    code: 'RI',
-    cities: ['Port Harcourt', 'Obio-Akpor', 'Okrika', 'Ahoada', 'Bonny']
-  },
-  {
-    name: 'Sokoto',
-    code: 'SO',
-    cities: ['Sokoto', 'Tambuwal', 'Gwadabawa', 'Bodinga', 'Yabo']
-  },
-  {
-    name: 'Taraba',
-    code: 'TA',
-    cities: ['Jalingo', 'Wukari', 'Bali', 'Gembu', 'Serti']
-  },
-  {
-    name: 'Yobe',
-    code: 'YO',
-    cities: ['Damaturu', 'Potiskum', 'Gashua', 'Nguru', 'Geidam']
-  },
-  {
-    name: 'Zamfara',
-    code: 'ZA',
-    cities: ['Gusau', 'Kaura Namoda', 'Talata Mafara', 'Zurmi', 'Anka']
-  }
+export const NIGERIAN_STATES = [
+  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
+  'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT', 'Gombe', 'Imo',
+  'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa',
+  'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba',
+  'Yobe', 'Zamfara'
 ];
 
-// Product Categories
-export const PRODUCT_CATEGORIES = [
-  'Electronics',
-  'Fashion & Clothing',
-  'Home & Garden',
-  'Sports & Recreation',
-  'Books & Education',
-  'Health & Beauty',
-  'Automotive',
-  'Collectibles & Art',
-  'Musical Instruments',
-  'Toys & Games',
-  'Food & Beverages',
-  'Services',
-  'Real Estate',
-  'Jewelry & Accessories',
-  'Baby & Kids',
-  'Office & Business',
-  'Crafts & Hobbies',
-  'Agriculture & Farming',
-  'Industrial & Scientific',
-  'Other'
+export const CATEGORIES = [
+  { value: 'ELECTRONICS', label: 'Electronics' },
+  { value: 'FASHION', label: 'Fashion & Clothing' },
+  { value: 'HOME_APPLIANCES', label: 'Home & Garden' },
+  { value: 'BOOKS', label: 'Books & Media' },
+  { value: 'SPORTS', label: 'Sports & Recreation' },
+  { value: 'AUTOMOTIVE', label: 'Automotive' },
+  { value: 'BEAUTY', label: 'Beauty & Health' },
+  { value: 'TOYS', label: 'Toys & Games' },
+  { value: 'JEWELRY', label: 'Jewelry & Accessories' },
+  { value: 'ARTS_CRAFTS', label: 'Arts & Crafts' },
+  { value: 'MUSIC', label: 'Musical Instruments' },
+  { value: 'FOOD_BEVERAGES', label: 'Food & Beverages' },
+  { value: 'TOOLS', label: 'Tools & Equipment' },
+  { value: 'SERVICES', label: 'Services' },
+  { value: 'OTHER', label: 'Other' }
 ];
 
-// Product Conditions
+// Alias for backward compatibility
+export const PRODUCT_CATEGORIES = CATEGORIES;
+
 export const PRODUCT_CONDITIONS = [
-  { value: 'new', label: 'Brand New', description: 'Never used, original packaging' },
-  { value: 'like-new', label: 'Like New', description: 'Barely used, excellent condition' },
-  { value: 'good', label: 'Good', description: 'Used but well maintained' },
-  { value: 'fair', label: 'Fair', description: 'Shows wear but functional' },
-  { value: 'poor', label: 'Poor', description: 'Heavy wear, may need repair' }
+  { value: 'NEW', label: 'New' },
+  { value: 'LIKE_NEW', label: 'Like New' },
+  { value: 'GOOD', label: 'Good' },
+  { value: 'FAIR', label: 'Fair' },
+  { value: 'POOR', label: 'Poor' }
 ];
 
-// Trade Types
-export const TRADE_TYPES = [
-  { value: 'item', label: 'Item for Item', description: 'Trade your item for another item' },
-  { value: 'money', label: 'Item for Money', description: 'Sell your item for cash' },
-  { value: 'service', label: 'Item for Service', description: 'Trade your item for a service' },
-  { value: 'combo', label: 'Combination', description: 'Mix of items, money, and services' }
-];
-
-// Currency
-export const CURRENCY = {
-  NGN: {
-    symbol: '₦',
-    name: 'Nigerian Naira',
-    code: 'NGN',
-    decimals: 2
+export const TRADE_OPTIONS = [
+  {
+    value: 'swap',
+    label: 'Trade Only',
+    description: 'I only want to exchange this item for something else'
+  },
+  {
+    value: 'cash',
+    label: 'Sell Only',
+    description: 'I only want to sell this item for cash'
+  },
+  {
+    value: 'both',
+    label: 'Trade or Sell',
+    description: 'I am open to both trading and selling this item'
   }
-};
-
-// Distance Units
-export const DISTANCE_UNITS = [
-  { value: 1, label: '1 km' },
-  { value: 5, label: '5 km' },
-  { value: 10, label: '10 km' },
-  { value: 25, label: '25 km' },
-  { value: 50, label: '50 km' },
-  { value: 100, label: '100 km' },
-  { value: -1, label: 'Any distance' }
 ];
 
-// Sort Options
-export const SORT_OPTIONS = [
-  { value: 'recent', label: 'Most Recent' },
-  { value: 'popular', label: 'Most Popular' },
-  { value: 'nearby', label: 'Nearest to Me' },
-  { value: 'alphabetical', label: 'A-Z' }
-];
-
-// Nigerian Phone Number Validation
-export const PHONE_REGEX = /^(\+234|234|0)?[789][01]\d{8}$/;
-
-// Common Nigerian Phone Prefixes
-export const PHONE_PREFIXES = [
-  '0701', '0703', '0704', '0705', '0706', '0708', '0802', '0803', '0805', '0806', '0807', '0808', '0809',
-  '0810', '0811', '0812', '0813', '0814', '0815', '0816', '0817', '0818', '0819', '0901', '0902', '0903',
-  '0904', '0905', '0906', '0907', '0908', '0909', '0915', '0916', '0917', '0918'
-];
-
-// Common Image Formats
-export const SUPPORTED_IMAGE_FORMATS = [
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp'
-];
-
-// App Store URLs
-export const STORE_URLS = {
-  IOS: 'https://apps.apple.com/app/tradebybarter',
-  ANDROID: 'https://play.google.com/store/apps/details?id=com.tradebybarter.mobile'
-};
-
-// Social Media URLs
-export const SOCIAL_URLS = {
-  WEBSITE: 'https://tradebybarter.com',
-  FACEBOOK: 'https://facebook.com/tradebybarter',
-  TWITTER: 'https://twitter.com/tradebybarter',
-  INSTAGRAM: 'https://instagram.com/tradebybarter',
-  LINKEDIN: 'https://linkedin.com/company/tradebybarter'
-};
-
-// Support
-export const SUPPORT = {
-  EMAIL: 'support@tradebybarter.com',
-  PHONE: '+234-800-TRADE-BY',
-  WHATSAPP: '+234-800-872-332-9',
-  HELP_CENTER: 'https://help.tradebybarter.com'
-};
-
-// Error Messages
-export const ERROR_MESSAGES = {
-  NETWORK: 'Please check your internet connection and try again',
-  SERVER: 'Something went wrong on our end. Please try again later',
-  VALIDATION: 'Please check your input and try again',
-  UNAUTHORIZED: 'You need to login to access this feature',
-  FORBIDDEN: 'You don\'t have permission to perform this action',
-  NOT_FOUND: 'The requested resource was not found',
-  TIMEOUT: 'Request timed out. Please try again',
-  OFFLINE: 'You are currently offline. Some features may not be available',
-  CAMERA_PERMISSION: 'Camera permission is required to take photos',
-  LOCATION_PERMISSION: 'Location permission is required for this feature',
-  STORAGE_PERMISSION: 'Storage permission is required to save photos',
-  BIOMETRIC_NOT_AVAILABLE: 'Biometric authentication is not available on this device',
-  BIOMETRIC_NOT_ENROLLED: 'No biometric credentials are enrolled on this device'
-};
-
-// Success Messages
-export const SUCCESS_MESSAGES = {
-  LOGIN: 'Welcome back to TradeByBarter!',
-  SIGNUP: 'Account created successfully! Welcome to TradeByBarter',
-  LOGOUT: 'You have been logged out successfully',
-  LISTING_CREATED: 'Your listing has been posted successfully',
-  LISTING_UPDATED: 'Your listing has been updated',
-  LISTING_DELETED: 'Your listing has been deleted',
-  OFFER_SENT: 'Your offer has been sent successfully',
-  OFFER_ACCEPTED: 'Offer accepted! You can now proceed with the trade',
-  OFFER_REJECTED: 'Offer has been rejected',
-  MESSAGE_SENT: 'Message sent successfully',
-  PROFILE_UPDATED: 'Your profile has been updated',
-  PAYMENT_SUCCESS: 'Payment completed successfully',
-  VERIFICATION_SENT: 'Verification code has been sent to your phone'
-};
-
-// Loading Messages
-export const LOADING_MESSAGES = {
-  AUTHENTICATING: 'Signing you in...',
-  CREATING_ACCOUNT: 'Creating your account...',
-  LOADING_LISTINGS: 'Loading listings...',
-  POSTING_LISTING: 'Posting your listing...',
-  SENDING_OFFER: 'Sending your offer...',
-  PROCESSING_PAYMENT: 'Processing payment...',
-  UPLOADING_IMAGES: 'Uploading images...',
-  SENDING_MESSAGE: 'Sending message...',
-  VERIFYING_PHONE: 'Verifying phone number...'
-};
-
-// App Theme Colors (from design system)
 export const COLORS = {
   primary: {
-    DEFAULT: '#1E3A8A',
-    50: '#EFF6FF',
-    100: '#DBEAFE',
-    200: '#BFDBFE',
-    300: '#93C5FD',
-    400: '#60A5FA',
-    500: '#3B82F6',
-    600: '#2563EB',
-    700: '#1D4ED8',
-    800: '#1E40AF',
-    900: '#1E3A8A',
+    50: '#EEF2FF',
+    100: '#E0E7FF',
+    200: '#C7D2FE',
+    300: '#A5B4FC',
+    400: '#818CF8',
+    500: '#6366F1',
+    600: '#4F46E5',
+    700: '#4338CA',
+    800: '#3730A3',
+    900: '#312E81',
+    950: '#1E1B4B',
+    DEFAULT: '#1E3A8A'
   },
   secondary: {
-    DEFAULT: '#10B981',
     50: '#ECFDF5',
     100: '#D1FAE5',
     200: '#A7F3D0',
@@ -433,9 +79,10 @@ export const COLORS = {
     700: '#047857',
     800: '#065F46',
     900: '#064E3B',
+    950: '#022C22',
+    DEFAULT: '#10B981'
   },
   accent: {
-    DEFAULT: '#F97316',
     50: '#FFF7ED',
     100: '#FFEDD5',
     200: '#FED7AA',
@@ -446,69 +93,232 @@ export const COLORS = {
     700: '#C2410C',
     800: '#9A3412',
     900: '#7C2D12',
+    950: '#431407',
+    DEFAULT: '#F97316'
+  },
+  gray: {
+    50: '#F9FAFB',
+    100: '#F3F4F6',
+    200: '#E5E7EB',
+    300: '#D1D5DB',
+    400: '#9CA3AF',
+    500: '#6B7280',
+    600: '#4B5563',
+    700: '#374151',
+    800: '#1F2937',
+    900: '#111827',
+    950: '#030712'
   },
   neutral: {
-    light: '#F9FAFB',
-    dark: '#111827',
+    light: '#F3F4F6',
     gray: '#6B7280',
-    border: '#E5E7EB',
+    dark: '#111827',
+    border: '#E5E7EB'
   },
   status: {
     success: '#10B981',
-    error: '#EF4444',
     warning: '#F59E0B',
-    info: '#3B82F6',
+    error: '#EF4444',
+    info: '#3B82F6'
   }
 };
 
-// Typography
+export const SPACING = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+  '2xl': 48,
+  '3xl': 64
+};
+
+export const BORDER_RADIUS = {
+  sm: 4,
+  md: 8,
+  lg: 12,
+  xl: 16,
+  '2xl': 24,
+  full: 9999
+};
+
+export const FONT_SIZES = {
+  xs: 12,
+  sm: 14,
+  base: 16,
+  lg: 18,
+  xl: 20,
+  '2xl': 24,
+  '3xl': 30,
+  '4xl': 36
+};
+
+export const FONT_WEIGHTS = {
+  normal: '400',
+  medium: '500',
+  semibold: '600',
+  bold: '700'
+};
+
+// Typography system
 export const TYPOGRAPHY = {
+  fontSize: FONT_SIZES,
+  fontWeight: FONT_WEIGHTS,
   fontFamily: {
-    inter: 'System', // Use system font instead of Inter for now
-    poppins: 'System', // Use system font instead of Poppins for now
-  },
-  fontSize: {
-    xs: 12,
-    sm: 14,
-    base: 16,
-    lg: 18,
-    xl: 20,
-    '2xl': 24,
-    '3xl': 28,
-  },
-  fontWeight: {
-    normal: '400',
-    medium: '500',
-    semibold: '600',
-    bold: '700',
+    inter: 'Inter_400Regular',
+    poppins: 'Poppins_400Regular'
   },
   lineHeight: {
+    none: 1,
     tight: 1.25,
+    snug: 1.375,
     normal: 1.5,
-    relaxed: 1.75,
+    relaxed: 1.625,
+    loose: 2
   }
 };
 
-// Animation Durations
+// Animation constants
 export const ANIMATION = {
-  fast: 150,
-  normal: 300,
-  slow: 500,
-  splash: 2000,
+  duration: {
+    fast: 150,
+    normal: 300,
+    slow: 500
+  },
+  normal: 300, // backward compatibility
+  easing: {
+    ease: 'ease',
+    easeIn: 'ease-in',
+    easeOut: 'ease-out',
+    easeInOut: 'ease-in-out'
+  }
 };
 
-// Storage Keys
+// Storage keys
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'accessToken',
   REFRESH_TOKEN: 'refreshToken',
   USER_DATA: 'userData',
-  THEME: 'theme',
-  LANGUAGE: 'language',
-  BIOMETRIC_ENABLED: 'biometricEnabled',
-  PUSH_TOKEN: 'pushToken',
   ONBOARDING_COMPLETED: 'onboardingCompleted',
-  CACHED_LISTINGS: 'cachedListings',
-  LAST_SYNC: 'lastSync',
-  DRAFT_LISTING: 'draftListing',
-  SEARCH_HISTORY: 'searchHistory',
+  THEME_PREFERENCE: 'themePreference',
+  LANGUAGE_PREFERENCE: 'languagePreference'
+};
+
+// Nigerian currency formatting
+export const formatNaira = (amount: number): string => {
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount);
+};
+
+// Time formatting
+export const formatTimeAgo = (date: string | Date): string => {
+  const now = new Date();
+  const past = new Date(date);
+  const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+
+  const intervals = {
+    year: 31536000,
+    month: 2592000,
+    week: 604800,
+    day: 86400,
+    hour: 3600,
+    minute: 60,
+  };
+
+  for (const [unit, seconds] of Object.entries(intervals)) {
+    const interval = Math.floor(diffInSeconds / seconds);
+    if (interval >= 1) {
+      return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
+    }
+  }
+
+  return 'Just now';
+};
+
+// Input validation
+export const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+export const validatePhoneNumber = (phone: string): boolean => {
+  // Nigerian phone number formats
+  const phoneRegex = /^(\+234|234|0)[789][01]\d{8}$/;
+  return phoneRegex.test(phone.replace(/\s+/g, ''));
+};
+
+export const formatPhoneNumber = (phone: string): string => {
+  // Format Nigerian phone number for display
+  const cleaned = phone.replace(/\D/g, '');
+  
+  if (cleaned.startsWith('234')) {
+    return `+${cleaned}`;
+  } else if (cleaned.startsWith('0')) {
+    return `+234${cleaned.slice(1)}`;
+  }
+  
+  return phone;
+};
+
+// Device utils
+export const isTablet = (width: number): boolean => {
+  return width >= 768;
+};
+
+export const getResponsivePadding = (width: number): number => {
+  return isTablet(width) ? SPACING.xl : SPACING.md;
+};
+
+// Nigerian business hours
+export const BUSINESS_HOURS = {
+  start: 8, // 8 AM
+  end: 18,  // 6 PM
+};
+
+export const isBusinessHours = (): boolean => {
+  const now = new Date();
+  const hour = now.getHours();
+  return hour >= BUSINESS_HOURS.start && hour < BUSINESS_HOURS.end;
+};
+
+// App version and build info
+export const APP_INFO = {
+  version: '1.0.0',
+  buildNumber: '1',
+  supportEmail: 'support@tradebybarter.ng',
+  supportPhone: '+234 800 TRADE NOW',
+  website: 'https://tradebybarter.ng',
+  privacyPolicy: 'https://tradebybarter.ng/privacy',
+  termsOfService: 'https://tradebybarter.ng/terms',
+};
+
+// Error messages
+export const ERROR_MESSAGES = {
+  NETWORK_ERROR: 'Network error. Please check your internet connection.',
+  NETWORK: 'Network error. Please check your internet connection.',
+  SERVER: 'Server error. Please try again later.',
+  AUTH_ERROR: 'Authentication failed. Please login again.',
+  SERVER_ERROR: 'Server error. Please try again later.',
+  VALIDATION_ERROR: 'Please check your input and try again.',
+  NOT_FOUND: 'The requested resource was not found.',
+  PERMISSION_DENIED: 'You do not have permission to perform this action.',
+  FILE_TOO_LARGE: 'File size is too large. Please choose a smaller file.',
+  INVALID_FILE_TYPE: 'Invalid file type. Please choose a valid image file.',
+};
+
+// Success messages
+export const SUCCESS_MESSAGES = {
+  LOGIN: 'Login successful!',
+  SIGNUP: 'Account created successfully!',
+  LISTING_CREATED: 'Your listing has been created successfully!',
+  LISTING_UPDATED: 'Your listing has been updated successfully!',
+  LISTING_DELETED: 'Your listing has been deleted successfully!',
+  OFFER_SENT: 'Your offer has been sent successfully!',
+  MESSAGE_SENT: 'Message sent successfully!',
+  PROFILE_UPDATED: 'Your profile has been updated successfully!',
+  PASSWORD_CHANGED: 'Your password has been changed successfully!',
 };

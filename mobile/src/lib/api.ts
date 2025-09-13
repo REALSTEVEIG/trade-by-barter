@@ -1,10 +1,27 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ApiResponse, PaginatedResponse } from '@/types';
-import { STORAGE_KEYS } from '@/constants';
 import { API_CONFIG } from '@/constants/network';
 
-// Create axios instance with auto-detected URL
+// Type definitions
+interface ApiResponse<T = any> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
+interface PaginatedResponse<T = any> {
+  success: boolean;
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  message?: string;
+}
+
+// Create axios instance
 const api: AxiosInstance = axios.create({
   baseURL: API_CONFIG.BASE_URL,
   timeout: API_CONFIG.TIMEOUT,
@@ -16,13 +33,9 @@ const api: AxiosInstance = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   async (config) => {
-    try {
-      const token = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    } catch (error) {
-      console.error('Error getting token from storage:', error);
+    const token = await AsyncStorage.getItem('accessToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -43,26 +56,23 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+        const refreshToken = await AsyncStorage.getItem('refreshToken');
         if (refreshToken) {
-          const response = await axios.post(`${api.defaults.baseURL}/auth/refresh`, {
+          const response = await axios.post(`${API_CONFIG.BASE_URL}/auth/refresh`, {
             refreshToken,
           });
 
           const { accessToken } = response.data.data;
-          await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+          await AsyncStorage.setItem('accessToken', accessToken);
 
           // Retry original request with new token
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return api(originalRequest);
         }
       } catch (refreshError) {
-        // Refresh failed, clear tokens
-        await AsyncStorage.multiRemove([
-          STORAGE_KEYS.ACCESS_TOKEN,
-          STORAGE_KEYS.REFRESH_TOKEN,
-          STORAGE_KEYS.USER_DATA,
-        ]);
+        // Refresh failed, clear tokens and redirect to login
+        await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
+        // Note: Navigation to login screen should be handled by the app
         return Promise.reject(refreshError);
       }
     }
@@ -116,7 +126,10 @@ export const apiClient = {
 // Authentication API
 export const authApi = {
   login: async (credentials: { email: string; password: string }) => {
-    return apiClient.post('/auth/login', credentials);
+    return apiClient.post('/auth/login', {
+      identifier: credentials.email,
+      password: credentials.password
+    });
   },
 
   signup: async (userData: {
@@ -124,21 +137,21 @@ export const authApi = {
     password: string;
     firstName: string;
     lastName: string;
-    phone?: string;
+    phoneNumber: string;
+    state: string;
+    city: string;
+    displayName?: string;
+    address?: string;
   }) => {
     return apiClient.post('/auth/signup', userData);
   },
 
   logout: async () => {
-    const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+    const refreshToken = await AsyncStorage.getItem('refreshToken');
     const response = await apiClient.post('/auth/logout', { refreshToken });
     
     // Clear tokens
-    await AsyncStorage.multiRemove([
-      STORAGE_KEYS.ACCESS_TOKEN,
-      STORAGE_KEYS.REFRESH_TOKEN,
-      STORAGE_KEYS.USER_DATA,
-    ]);
+    await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
     
     return response;
   },
@@ -168,7 +181,7 @@ export const authApi = {
   },
 
   getProfile: async () => {
-    return apiClient.get('/auth/profile');
+    return apiClient.get('/auth/me');
   },
 
   updateProfile: async (data: any) => {
@@ -231,14 +244,6 @@ export const offersApi = {
 
   counterOffer: async (id: string, data: any) => {
     return apiClient.post(`/offers/${id}/counter`, data);
-  },
-
-  acceptOffer: async (id: string) => {
-    return apiClient.post(`/offers/${id}/accept`);
-  },
-
-  rejectOffer: async (id: string) => {
-    return apiClient.post(`/offers/${id}/reject`);
   },
 };
 
@@ -304,10 +309,6 @@ export const notificationsApi = {
 
   deleteNotification: async (id: string) => {
     return apiClient.delete(`/notifications/${id}`);
-  },
-
-  updatePushToken: async (token: string) => {
-    return apiClient.post('/notifications/push-token', { token });
   },
 };
 

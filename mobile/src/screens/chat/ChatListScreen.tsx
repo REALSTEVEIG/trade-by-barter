@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,14 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { chatApi } from '@/lib/api';
+import socketService from '@/lib/socket';
 import { AppStackParamList } from '@/navigation';
 import { Chat } from '@/types';
 import { COLORS, TYPOGRAPHY, ERROR_MESSAGES } from '@/constants';
@@ -25,25 +27,110 @@ const ChatListScreen: React.FC = () => {
   
   const [chats, setChats] = useState<Chat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
     fetchChats();
+    initializeSocket();
+    
+    return () => {
+      // Clean up socket listeners when component unmounts
+      socketService.disconnect();
+    };
   }, []);
 
-  const fetchChats = async () => {
+  // Connect socket when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (!isConnected) {
+        initializeSocket();
+      }
+      return () => {
+        // Keep socket connected but remove specific listeners
+      };
+    }, [isConnected])
+  );
+
+  const initializeSocket = async () => {
     try {
-      setIsLoading(true);
+      const connected = await socketService.connect();
+      setIsConnected(connected);
+      
+      if (connected) {
+        // Listen for new messages to update chat list
+        const unsubscribeMessage = socketService.onMessage((message) => {
+          updateChatWithNewMessage(message);
+        });
+
+        // Listen for connection status
+        const unsubscribeConnection = socketService.onConnection((connected) => {
+          setIsConnected(connected);
+        });
+
+        // Store unsubscribe functions for cleanup
+        return () => {
+          unsubscribeMessage();
+          unsubscribeConnection();
+        };
+      }
+    } catch (error) {
+      console.error('Failed to initialize socket:', error);
+      setIsConnected(false);
+    }
+  };
+
+  const updateChatWithNewMessage = (message: any) => {
+    setChats(prevChats => {
+      const updatedChats = [...prevChats];
+      const chatIndex = updatedChats.findIndex(chat => chat.id === message.chatId);
+      
+      if (chatIndex !== -1) {
+        // Update existing chat
+        const updatedChat = {
+          ...updatedChats[chatIndex],
+          lastMessage: message,
+          updatedAt: message.createdAt,
+        };
+        updatedChats[chatIndex] = updatedChat;
+        
+        // Move to top
+        updatedChats.unshift(updatedChats.splice(chatIndex, 1)[0]);
+      } else {
+        // If chat doesn't exist, refetch chats
+        fetchChats();
+      }
+      
+      return updatedChats;
+    });
+  };
+
+  const fetchChats = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+      
       const response = await chatApi.getChats();
       setChats(response.data as Chat[]);
     } catch (error: any) {
       console.error('Error fetching chats:', error);
-      Alert.alert(
-        'Error',
-        error.response?.data?.message || ERROR_MESSAGES.NETWORK
-      );
+      if (!isRefresh) {
+        Alert.alert(
+          'Error',
+          error.response?.data?.message || ERROR_MESSAGES.NETWORK
+        );
+      }
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    fetchChats(true);
   };
 
   const handleChatPress = (chat: Chat) => {
@@ -139,6 +226,12 @@ const ChatListScreen: React.FC = () => {
       <Text style={styles.emptySubtitle}>
         Start trading to begin conversations with other users
       </Text>
+      {!isConnected && (
+        <View style={styles.connectionStatus}>
+          <Ionicons name="cloud-offline-outline" size={16} color={COLORS.status.warning} />
+          <Text style={styles.connectionText}>Offline - Pull to refresh</Text>
+        </View>
+      )}
     </View>
   );
 
@@ -154,7 +247,18 @@ const ChatListScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Messages</Text>
+        <View style={styles.headerContent}>
+          <Text style={styles.title}>Messages</Text>
+          <View style={styles.connectionIndicator}>
+            <View style={[
+              styles.connectionDot,
+              { backgroundColor: isConnected ? COLORS.status.success : COLORS.status.warning }
+            ]} />
+            <Text style={styles.connectionText}>
+              {isConnected ? 'Online' : 'Offline'}
+            </Text>
+          </View>
+        </View>
       </View>
 
       <FlatList
@@ -164,6 +268,14 @@ const ChatListScreen: React.FC = () => {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={[COLORS.primary.DEFAULT]}
+            tintColor={COLORS.primary.DEFAULT}
+          />
+        }
       />
     </SafeAreaView>
   );
@@ -191,11 +303,40 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.neutral.border,
   },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   title: {
     fontSize: TYPOGRAPHY.fontSize['2xl'],
     fontWeight: '700',
     color: COLORS.neutral.dark,
     fontFamily: TYPOGRAPHY.fontFamily.poppins,
+  },
+  connectionIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  connectionDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  connectionText: {
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: COLORS.neutral.gray,
+    fontFamily: TYPOGRAPHY.fontFamily.inter,
+  },
+  connectionStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: COLORS.status.warning + '20',
+    borderRadius: 8,
   },
   listContent: {
     flexGrow: 1,

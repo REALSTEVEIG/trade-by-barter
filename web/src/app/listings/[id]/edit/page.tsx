@@ -1,17 +1,18 @@
 'use client';
 
 import * as React from 'react';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Camera, ArrowLeft, ChevronDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { Camera, ArrowLeft, ChevronDown, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { listingsApi } from '@/lib/api';
 import { CATEGORIES, PRODUCT_CONDITIONS, NIGERIAN_STATES } from '@/lib/utils';
 import { useAuth, withAuth } from '@/contexts/auth-context';
+import Image from 'next/image';
 
-interface CreateListingFormData {
+interface EditListingFormData {
   title: string;
   description: string;
   category: string;
@@ -25,6 +26,7 @@ interface CreateListingFormData {
   isSwapOnly: boolean;
   swapPreferences: string;
   images: File[];
+  existingImages: string[];
 }
 
 const TRADE_OPTIONS = [
@@ -33,11 +35,13 @@ const TRADE_OPTIONS = [
   { value: 'both', label: 'Both', description: 'Open to cash or trade' }
 ];
 
-function CreateListingPageComponent(): React.ReactElement {
-  const { user: _user } = useAuth();
+function EditListingPageComponent(): React.ReactElement {
+  const { user } = useAuth();
+  const { id } = useParams();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState<CreateListingFormData>({
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [formData, setFormData] = useState<EditListingFormData>({
     title: '',
     description: '',
     category: '',
@@ -50,11 +54,56 @@ function CreateListingPageComponent(): React.ReactElement {
     acceptsSwap: true,
     isSwapOnly: false,
     swapPreferences: '',
-    images: []
+    images: [],
+    existingImages: []
   });
   const [error, setError] = useState<string | null>(null);
-
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+
+  // Load existing listing data
+  useEffect(() => {
+    const fetchListing = async () => {
+      try {
+        setIsInitialLoading(true);
+        const response = await listingsApi.getListing(id as string);
+        const listing = response.data as any;
+
+        // Check if user owns this listing
+        if (listing.owner.id !== user?.id) {
+          router.push(`/listings/${id}`);
+          return;
+        }
+
+        setFormData({
+          title: listing.title || '',
+          description: listing.description || '',
+          category: listing.category || '',
+          condition: listing.condition || '',
+          priceInKobo: listing.priceInKobo || 0,
+          state: listing.state || '',
+          city: listing.city || '',
+          specificLocation: listing.specificLocation || '',
+          acceptsCash: listing.acceptsCash,
+          acceptsSwap: listing.acceptsSwap,
+          isSwapOnly: listing.isSwapOnly,
+          swapPreferences: listing.swapPreferences?.join(', ') || '',
+          images: [],
+          existingImages: listing.images || []
+        });
+
+        setSelectedImages(listing.images || []);
+      } catch (error: any) {
+        console.error('Error fetching listing:', error);
+        setError(error.response?.data?.message || 'Failed to load listing');
+      } finally {
+        setIsInitialLoading(false);
+      }
+    };
+
+    if (id && user) {
+      fetchListing();
+    }
+  }, [id, user, router]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -71,14 +120,28 @@ function CreateListingPageComponent(): React.ReactElement {
   };
 
   const removeImage = (index: number) => {
+    const imageToRemove = selectedImages[index];
+    const isExistingImage = imageToRemove ? formData.existingImages.includes(imageToRemove) : false;
+    
     setSelectedImages(prev => prev.filter((_, i) => i !== index));
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
+    
+    if (isExistingImage) {
+      // Remove from existing images
+      setFormData(prev => ({
+        ...prev,
+        existingImages: prev.existingImages.filter(img => img !== imageToRemove)
+      }));
+    } else {
+      // Remove from new images
+      const newImageIndex = index - formData.existingImages.length;
+      setFormData(prev => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== newImageIndex)
+      }));
+    }
   };
 
-  const handleInputChange = (field: keyof CreateListingFormData, value: string | number | boolean) => {
+  const handleInputChange = (field: keyof EditListingFormData, value: string | number | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -128,7 +191,7 @@ function CreateListingPageComponent(): React.ReactElement {
     setError(null);
 
     try {
-      // Create FormData for the listing
+      // Create FormData for the listing update
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title);
       formDataToSend.append('description', formData.description);
@@ -146,20 +209,34 @@ function CreateListingPageComponent(): React.ReactElement {
         formDataToSend.append('swapPreferences', JSON.stringify([formData.swapPreferences]));
       }
       
-      // Add images to form data
-      formData.images.forEach((image, _index) => {
-        formDataToSend.append(`images`, image);
+      // Add existing images to keep
+      formDataToSend.append('existingImages', JSON.stringify(formData.existingImages));
+      
+      // Add new images
+      formData.images.forEach((image) => {
+        formDataToSend.append('images', image);
       });
 
-      await listingsApi.createListing(formDataToSend);
-      router.push('/feed');
+      await listingsApi.updateListing(id as string, formDataToSend);
+      router.push(`/listings/${id}`);
     } catch (error: any) {
-      console.error('Error creating listing:', error);
-      setError(error.response?.data?.message || 'Failed to create listing');
+      console.error('Error updating listing:', error);
+      setError(error.response?.data?.message || 'Failed to update listing');
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (isInitialLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading listing...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -172,7 +249,7 @@ function CreateListingPageComponent(): React.ReactElement {
           >
             <ArrowLeft className="w-6 h-6 text-gray-600" />
           </button>
-          <h1 className="text-xl font-semibold text-gray-900">Post an Item</h1>
+          <h1 className="text-xl font-semibold text-gray-900">Edit Listing</h1>
         </div>
       </div>
 
@@ -181,22 +258,24 @@ function CreateListingPageComponent(): React.ReactElement {
         {/* Photo Upload */}
         <Card>
           <CardContent className="p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Add Photos</h2>
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Photos</h2>
             
             <div className="grid grid-cols-3 gap-3 mb-4">
               {selectedImages.map((image, index) => (
                 <div key={index} className="relative">
-                  <img
+                  <Image
                     src={image}
                     alt={`Upload ${index + 1}`}
+                    width={100}
+                    height={96}
                     className="w-full h-24 object-cover rounded-lg"
                   />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm"
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
                   >
-                    ×
+                    <X className="w-3 h-3" />
                   </button>
                 </div>
               ))}
@@ -389,7 +468,7 @@ function CreateListingPageComponent(): React.ReactElement {
             </div>
 
             {formData.acceptsSwap && (
-              <div>
+              <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   What are you looking for in exchange? (Optional)
                 </label>
@@ -415,12 +494,12 @@ function CreateListingPageComponent(): React.ReactElement {
           disabled={isLoading || !formData.title || !formData.category || !formData.condition || !formData.state || !formData.city}
           className="w-full py-3 text-lg font-medium"
         >
-          {isLoading ? 'Posting...' : 'Post Item'}
+          {isLoading ? 'Updating...' : 'Update Listing'}
         </Button>
       </form>
     </div>
   );
 }
 
-const CreateListingPage = withAuth(CreateListingPageComponent);
-export default CreateListingPage;
+const EditListingPage = withAuth(EditListingPageComponent);
+export default EditListingPage;

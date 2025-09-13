@@ -7,7 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
     "scheme": "tradebybarter",
     "platforms": ["ios", "android"],
     "jsEngine": "hermes",
@@ -58,7 +57,8 @@
     "extra": {
       "eas": {
         "projectId": "tradebybarter-mobile"
-      }
+      },
+      "EXPO_PUBLIC_API_URL": ""
     }
   }
 }

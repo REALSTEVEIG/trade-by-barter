@@ -147,7 +147,7 @@ export const testHelpers = {
       disconnect: jest.fn(),
     }
     
-    global.IntersectionObserver = jest.fn(() => mockObserver)
+    global.IntersectionObserver = jest.fn(() => mockObserver) as any
     return mockObserver
   },
 }

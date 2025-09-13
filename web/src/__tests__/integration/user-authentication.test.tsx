@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AuthProvider } from '@/contexts/auth-context'
 
@@ -220,7 +220,7 @@ describe('User Authentication Integration Tests', () => {
     it('should include Nigerian cities in location options', () => {
       render(<MockSignupPage />)
       
-      const locationSelect = screen.getByTestId('location-select')
+      screen.getByTestId('location-select')
       
       expect(screen.getByText('Lagos')).toBeInTheDocument()
       expect(screen.getByText('Abuja')).toBeInTheDocument()

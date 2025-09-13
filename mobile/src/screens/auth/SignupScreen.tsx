@@ -96,8 +96,11 @@ const SignupScreen: React.FC = () => {
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
         email: form.email.trim().toLowerCase(),
-        phone: form.phone.trim(),
+        phoneNumber: form.phone.trim(),
         password: form.password,
+        state: 'Lagos', // Default state - should be collected in form
+        city: 'Ikeja', // Default city - should be collected in form
+        displayName: `${form.firstName.trim()} ${form.lastName.trim()}`,
       });
       
       Alert.alert('Success', SUCCESS_MESSAGES.SIGNUP);

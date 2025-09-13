@@ -218,18 +218,33 @@ export const NIGERIAN_STATES = [
 ];
 
 export const CATEGORIES = [
-  'Electronics',
-  'Clothing',
-  'Home Goods',
-  'Sports',
-  'Books',
-  'Automotive',
-  'Beauty',
-  'Toys',
-  'Music',
-  'Art',
-  'Jewelry',
-  'Other'
+  { value: 'ELECTRONICS', label: 'Electronics' },
+  { value: 'FASHION', label: 'Fashion' },
+  { value: 'VEHICLES', label: 'Vehicles' },
+  { value: 'HOME_GARDEN', label: 'Home & Garden' },
+  { value: 'BOOKS_EDUCATION', label: 'Books & Education' },
+  { value: 'HEALTH_BEAUTY', label: 'Health & Beauty' },
+  { value: 'SPORTS_RECREATION', label: 'Sports & Recreation' },
+  { value: 'BABY_KIDS', label: 'Baby & Kids' },
+  { value: 'AGRICULTURE', label: 'Agriculture' },
+  { value: 'SERVICES', label: 'Services' },
+  { value: 'ART_CRAFTS', label: 'Arts & Crafts' },
+  { value: 'MUSICAL_INSTRUMENTS', label: 'Musical Instruments' },
+  { value: 'FURNITURE', label: 'Furniture' },
+  { value: 'APPLIANCES', label: 'Appliances' },
+  { value: 'BOOKS', label: 'Books' },
+  { value: 'SPORTS', label: 'Sports' },
+  { value: 'TOYS', label: 'Toys' },
+  { value: 'BEAUTY', label: 'Beauty' },
+  { value: 'OTHER', label: 'Other' },
+];
+
+export const PRODUCT_CONDITIONS = [
+  { value: 'NEW', label: 'Brand New', description: 'Never used, original packaging' },
+  { value: 'LIKE_NEW', label: 'Like New', description: 'Barely used, excellent condition' },
+  { value: 'GOOD', label: 'Good', description: 'Used but well maintained' },
+  { value: 'FAIR', label: 'Fair', description: 'Shows wear but functional' },
+  { value: 'POOR', label: 'Poor', description: 'Heavy wear, may need repair' },
 ];
 
 export function getCurrentLocation(): Promise<GeolocationPosition> {

@@ -11,115 +11,21 @@ import { useAuth, withAuth } from '@/contexts/auth-context';
 import { Chat, Message } from '@/types';
 import { formatTimeAgo, getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { chatApi } from '@/lib/api';
+import { socketService } from '@/lib/socket';
+import { webrtcService, CallState, CallUser } from '@/lib/webrtc';
+import { CallInterface, IncomingCall } from '@/components/common/call-interface';
+import { ProfileModal } from '@/components/common/profile-modal';
 
-// Mock data for development
-const mockChats: Chat[] = [
-  {
-    id: '1',
-    participants: [
-      {
-        id: '2',
-        email: 'john@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        avatar: '',
-        bio: '',
-        isVerified: true,
-        rating: 4.8,
-        totalTrades: 15,
-        joinedAt: new Date(),
-        lastActive: new Date(),
-      },
-    ],
-    lastMessage: {
-      id: '1',
-      chatId: '1',
-      senderId: '2',
-      content: 'Hey, is the iPhone still available?',
-      type: 'text',
-      status: 'read',
-      createdAt: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
-      updatedAt: new Date(),
-    },
-    unreadCount: 2,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '2',
-    participants: [
-      {
-        id: '3',
-        email: 'sarah@example.com',
-        firstName: 'Sarah',
-        lastName: 'Johnson',
-        avatar: '',
-        bio: '',
-        isVerified: true,
-        rating: 4.9,
-        totalTrades: 32,
-        joinedAt: new Date(),
-        lastActive: new Date(),
-      },
-    ],
-    lastMessage: {
-      id: '2',
-      chatId: '2',
-      senderId: '1',
-      content: 'Thanks for the trade!',
-      type: 'text',
-      status: 'delivered',
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-      updatedAt: new Date(),
-    },
-    unreadCount: 0,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+// Real-time state
+interface TypingUser {
+  userId: string;
+  name: string;
+}
 
-const mockMessages: Message[] = [
-  {
-    id: '1',
-    chatId: '1',
-    senderId: '2',
-    content: 'Hey, is the iPhone still available?',
-    type: 'text',
-    status: 'read',
-    createdAt: new Date(Date.now() - 1000 * 60 * 10),
-    updatedAt: new Date(),
-  },
-  {
-    id: '2',
-    chatId: '1',
-    senderId: '1',
-    content: 'Yes, it is! Are you interested?',
-    type: 'text',
-    status: 'read',
-    createdAt: new Date(Date.now() - 1000 * 60 * 8),
-    updatedAt: new Date(),
-  },
-  {
-    id: '3',
-    chatId: '1',
-    senderId: '2',
-    content: 'Definitely! Can we meet up?',
-    type: 'text',
-    status: 'read',
-    createdAt: new Date(Date.now() - 1000 * 60 * 5),
-    updatedAt: new Date(),
-  },
-  {
-    id: '4',
-    chatId: '1',
-    senderId: '1',
-    content: 'Sure! How about tomorrow at 2 PM?',
-    type: 'text',
-    status: 'delivered',
-    createdAt: new Date(Date.now() - 1000 * 60 * 2),
-    updatedAt: new Date(),
-  },
-];
+interface OnlineUsers {
+  [userId: string]: boolean;
+}
 
 function ChatPageComponent(): React.ReactElement {
   const { user } = useAuth();
@@ -131,8 +37,23 @@ function ChatPageComponent(): React.ReactElement {
   const [messagesLoading, setMessagesLoading] = React.useState(false);
   const [sending, setSending] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [typingUsers, setTypingUsers] = React.useState<TypingUser[]>([]);
+  const [_onlineUsers, setOnlineUsers] = React.useState<OnlineUsers>({});
+  const [isTyping, setIsTyping] = React.useState(false);
+  const [socketConnected, setSocketConnected] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  
+  // Call state
+  const [_callState, setCallState] = React.useState<CallState>(webrtcService.getState());
+  const [showCallInterface, setShowCallInterface] = React.useState(false);
+  const [incomingCall, setIncomingCall] = React.useState<{
+    caller: CallUser;
+    callType: 'video' | 'audio';
+  } | null>(null);
+  const [showProfileModal, setShowProfileModal] = React.useState(false);
 
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = React.useRef<number | null>(null);
 
   // Transform user data for Header component
   const headerUser = user ? {
@@ -152,12 +73,31 @@ function ChatPageComponent(): React.ReactElement {
   const fetchChats = React.useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
-      // For development, use mock data
-      // const response = await chatApi.getChats();
-      // setChats(response.data as Chat[]);
-      setChats(mockChats);
-    } catch (err) {
+      setError(null);
+      const response = await chatApi.getChats();
+      // Transform the response to match our Chat interface
+      const responseData = response.data as any;
+      const transformedChats = (responseData?.items || responseData || []).map((chat: any) => ({
+        id: chat.id,
+        participants: chat.participants || [],
+        lastMessage: chat.lastMessage ? {
+          id: chat.lastMessage.id,
+          chatId: chat.id,
+          senderId: chat.lastMessage.senderId,
+          content: chat.lastMessage.content,
+          type: chat.lastMessage.messageType || chat.lastMessage.type,
+          status: 'read', // Default status
+          createdAt: new Date(chat.lastMessage.createdAt),
+          updatedAt: new Date(chat.lastMessage.createdAt),
+        } : undefined,
+        unreadCount: chat.unreadCount || 0,
+        createdAt: new Date(chat.createdAt),
+        updatedAt: new Date(chat.updatedAt || chat.createdAt),
+      }));
+      setChats(transformedChats);
+    } catch (err: any) {
       console.error('Failed to fetch chats:', err);
+      setError(err.response?.data?.message || 'Failed to load chats');
     } finally {
       setLoading(false);
     }
@@ -166,15 +106,163 @@ function ChatPageComponent(): React.ReactElement {
   const fetchMessages = React.useCallback(async (chatId: string): Promise<void> => {
     try {
       setMessagesLoading(true);
-      // For development, use mock data
-      // const response = await chatApi.getMessages(chatId);
-      // setMessages(response.data as Message[]);
-      setMessages(mockMessages.filter(m => m.chatId === chatId));
-    } catch (err) {
+      setError(null);
+      const response = await chatApi.getMessages(chatId);
+      // Transform the response to match our Message interface
+      const responseData = response.data as any;
+      const transformedMessages = (responseData?.items || responseData || []).map((msg: any) => ({
+        id: msg.id,
+        chatId: msg.chatId,
+        senderId: msg.senderId,
+        content: msg.content,
+        type: msg.type || msg.messageType,
+        status: msg.isRead ? 'read' : 'delivered',
+        createdAt: new Date(msg.createdAt || msg.sentAt),
+        updatedAt: new Date(msg.updatedAt || msg.createdAt || msg.sentAt),
+        mediaUrl: msg.mediaUrl,
+        metadata: msg.metadata,
+      })).reverse(); // Reverse to show oldest first
+      setMessages(transformedMessages);
+    } catch (err: any) {
       console.error('Failed to fetch messages:', err);
+      setError(err.response?.data?.message || 'Failed to load messages');
     } finally {
       setMessagesLoading(false);
     }
+  }, []);
+
+  // Socket.IO connection effect
+  React.useEffect(() => {
+    const connectSocket = async () => {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('Authentication token not found');
+        return;
+      }
+
+      try {
+        await socketService.connect(token);
+        await webrtcService.initialize(socketService);
+        setSocketConnected(true);
+        setError(null);
+
+        // Set up Socket.IO event listeners
+        socketService.onMessageReceived((message) => {
+          setMessages(prev => [...prev, {
+            id: message.id,
+            chatId: message.chatId,
+            senderId: message.senderId,
+            content: message.content,
+            type: message.type,
+            status: 'delivered',
+            createdAt: new Date(message.sentAt || message.createdAt),
+            updatedAt: new Date(message.updatedAt || message.createdAt),
+            mediaUrl: message.mediaUrl,
+            metadata: message.metadata,
+          }]);
+
+          // Update chat list with new message
+          setChats(prev => prev.map(chat =>
+            chat.id === message.chatId
+              ? {
+                  ...chat,
+                  lastMessage: {
+                    id: message.id,
+                    chatId: message.chatId,
+                    senderId: message.senderId,
+                    content: message.content,
+                    type: message.type,
+                    status: 'delivered',
+                    createdAt: new Date(message.sentAt || message.createdAt),
+                    updatedAt: new Date(message.updatedAt || message.createdAt),
+                  },
+                  unreadCount: message.senderId !== user?.id ? chat.unreadCount + 1 : chat.unreadCount,
+                }
+              : chat
+          ));
+        });
+
+        socketService.onMessageSent((data) => {
+          // Update message status to sent
+          setMessages(prev => prev.map(msg =>
+            msg.id === data.messageId
+              ? { ...msg, status: 'sent' }
+              : msg
+          ));
+        });
+
+        socketService.onUserTyping((data) => {
+          if (data.userId !== user?.id && selectedChat?.id === data.chatId) {
+            setTypingUsers(prev => {
+              const exists = prev.find(u => u.userId === data.userId);
+              if (!exists) {
+                return [...prev, { userId: data.userId, name: 'User' }]; // Would get name from participants
+              }
+              return prev;
+            });
+          }
+        });
+
+        socketService.onUserStoppedTyping((data) => {
+          if (data.userId !== user?.id) {
+            setTypingUsers(prev => prev.filter(u => u.userId !== data.userId));
+          }
+        });
+
+        socketService.onUserPresenceChanged((data) => {
+          setOnlineUsers(prev => ({
+            ...prev,
+            [data.userId]: data.isOnline,
+          }));
+        });
+
+        socketService.onError((error) => {
+          console.error('Socket error:', error);
+          setError(error.message);
+        });
+
+      } catch (err: any) {
+        console.error('Failed to connect to chat:', err);
+        setError('Failed to connect to chat server');
+        setSocketConnected(false);
+      }
+    };
+
+    connectSocket();
+
+    return () => {
+      socketService.removeAllListeners();
+      socketService.disconnect();
+      webrtcService.cleanup();
+      setSocketConnected(false);
+    };
+  }, [user?.id, selectedChat?.id]);
+
+  // WebRTC event listeners
+  React.useEffect(() => {
+    const handleCallStateChange = (newState: CallState) => {
+      setCallState(newState);
+      setShowCallInterface(newState.isInCall);
+    };
+
+    const handleIncomingCall = (data: { caller: CallUser; callType: 'video' | 'audio' }) => {
+      setIncomingCall(data);
+    };
+
+    const handleCallEnded = () => {
+      setShowCallInterface(false);
+      setIncomingCall(null);
+    };
+
+    webrtcService.on('callStateChanged', handleCallStateChange);
+    webrtcService.on('incomingCall', handleIncomingCall);
+    webrtcService.on('callEnded', handleCallEnded);
+
+    return () => {
+      webrtcService.off('callStateChanged', handleCallStateChange);
+      webrtcService.off('incomingCall', handleIncomingCall);
+      webrtcService.off('callEnded', handleCallEnded);
+    };
   }, []);
 
   React.useEffect(() => {
@@ -184,8 +272,20 @@ function ChatPageComponent(): React.ReactElement {
   React.useEffect(() => {
     if (selectedChat) {
       fetchMessages(selectedChat.id);
+      
+      // Join chat room
+      if (socketConnected) {
+        socketService.joinChat(selectedChat.id);
+        socketService.markAsRead(selectedChat.id);
+      }
     }
-  }, [selectedChat, fetchMessages]);
+
+    return () => {
+      if (selectedChat && socketConnected) {
+        socketService.leaveChat(selectedChat.id);
+      }
+    };
+  }, [selectedChat, socketConnected, fetchMessages]);
 
   const handleChatSelect = (chat: Chat): void => {
     setSelectedChat(chat);
@@ -198,29 +298,129 @@ function ChatPageComponent(): React.ReactElement {
 
     try {
       setSending(true);
+      
+      // Clear typing indicator
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      setIsTyping(false);
+      if (socketConnected) {
+        socketService.stopTyping(selectedChat.id);
+      }
 
-      // For development, add message locally
-      const newMsg: Message = {
-        id: Date.now().toString(),
+      const messageContent = newMessage.trim();
+      setNewMessage('');
+
+      // Add optimistic update
+      const tempId = `temp-${Date.now()}`;
+      const optimisticMessage: Message = {
+        id: tempId,
         chatId: selectedChat.id,
         senderId: user!.id,
-        content: newMessage.trim(),
+        content: messageContent,
         type: 'text',
-        status: 'sent',
+        status: 'sending' as any,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
-      setMessages(prev => [...prev, newMsg]);
-      setNewMessage('');
+      setMessages(prev => [...prev, optimisticMessage]);
 
-      // In production, use:
-      // await chatApi.sendMessage(messageData);
-    } catch (err) {
+      if (socketConnected) {
+        // Send via Socket.IO for real-time delivery
+        socketService.sendMessage({
+          chatId: selectedChat.id,
+          type: 'TEXT',
+          content: messageContent,
+        });
+      } else {
+        // Fallback to HTTP API
+        await chatApi.sendMessage({
+          chatId: selectedChat.id,
+          type: 'TEXT',
+          content: messageContent,
+        });
+      }
+
+      // Remove optimistic message since real message will come via socket
+      setMessages(prev => prev.filter(msg => msg.id !== tempId));
+
+    } catch (err: any) {
       console.error('Failed to send message:', err);
+      setError(err.response?.data?.message || 'Failed to send message');
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp-')));
     } finally {
       setSending(false);
     }
+  };
+
+  const handleTyping = (value: string): void => {
+    setNewMessage(value);
+
+    if (!selectedChat || !socketConnected) return;
+
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Start typing if not already
+    if (!isTyping && value.trim()) {
+      setIsTyping(true);
+      socketService.startTyping(selectedChat.id);
+    }
+
+    // Stop typing after 3 seconds of inactivity
+    typingTimeoutRef.current = window.setTimeout(() => {
+      setIsTyping(false);
+      socketService.stopTyping(selectedChat.id);
+      typingTimeoutRef.current = null;
+    }, 3000);
+
+    // Stop typing immediately if message is empty
+    if (!value.trim() && isTyping) {
+      setIsTyping(false);
+      socketService.stopTyping(selectedChat.id);
+    }
+  };
+
+  const handleInitiateCall = async (callType: 'video' | 'audio') => {
+    if (!selectedChat || !socketConnected) return;
+    
+    const otherParticipant = selectedChat.participants.find(p => p.id !== user?.id);
+    if (!otherParticipant) return;
+
+    try {
+      await webrtcService.initiateCall(otherParticipant.id, callType, {
+        id: otherParticipant.id,
+        name: `${otherParticipant.firstName} ${otherParticipant.lastName}`,
+        ...(otherParticipant.avatar && { avatar: otherParticipant.avatar }),
+      });
+    } catch (err: any) {
+      console.error('Failed to initiate call:', err);
+      setError('Failed to start call');
+    }
+  };
+
+  const handleAcceptCall = async () => {
+    if (!incomingCall) return;
+    
+    try {
+      await webrtcService.acceptCall();
+      setIncomingCall(null);
+    } catch (err: any) {
+      console.error('Failed to accept call:', err);
+      setError('Failed to accept call');
+    }
+  };
+
+  const handleRejectCall = () => {
+    if (!incomingCall) return;
+    
+    webrtcService.rejectCall();
+    setIncomingCall(null);
   };
 
   const getMessageStatusIcon = (status: Message['status']) => {
@@ -341,14 +541,17 @@ function ChatPageComponent(): React.ReactElement {
                         {(() => {
                           const otherParticipant = selectedChat.participants.find(p => p.id !== user?.id);
                           return otherParticipant ? (
-                            <>
+                            <button
+                              onClick={() => setShowProfileModal(true)}
+                              className="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                            >
                               <Avatar className="h-10 w-10">
                                 <AvatarImage src={otherParticipant.avatar} />
                                 <AvatarFallback className="bg-primary text-white">
                                   {getInitials(`${otherParticipant.firstName} ${otherParticipant.lastName}`)}
                                 </AvatarFallback>
                               </Avatar>
-                              <div>
+                              <div className="text-left">
                                 <h3 className="font-medium text-neutral-dark">
                                   {`${otherParticipant.firstName} ${otherParticipant.lastName}`}
                                 </h3>
@@ -356,16 +559,26 @@ function ChatPageComponent(): React.ReactElement {
                                   {otherParticipant.isVerified ? 'Verified trader' : 'Trader'}
                                 </p>
                               </div>
-                            </>
+                            </button>
                           ) : null;
                         })()}
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleInitiateCall('audio')}
+                          disabled={!socketConnected}
+                        >
                           <Phone className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleInitiateCall('video')}
+                          disabled={!socketConnected}
+                        >
                           <Video className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon">
@@ -380,6 +593,15 @@ function ChatPageComponent(): React.ReactElement {
                     {messagesLoading ? (
                       <div className="flex items-center justify-center py-8">
                         <Loading size="md" />
+                      </div>
+                    ) : error ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="text-center">
+                          <p className="text-red-600 mb-2">{error}</p>
+                          <Button variant="outline" size="sm" onClick={() => selectedChat && fetchMessages(selectedChat.id)}>
+                            Try Again
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <>
@@ -419,6 +641,25 @@ function ChatPageComponent(): React.ReactElement {
                             </div>
                           );
                         })}
+                        
+                        {/* Typing Indicator */}
+                        {typingUsers.length > 0 && (
+                          <div className="flex justify-start">
+                            <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-neutral-100">
+                              <div className="flex items-center gap-2">
+                                <div className="flex gap-1">
+                                  <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"></div>
+                                  <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                  <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                </div>
+                                <span className="text-xs text-neutral-600">
+                                  {typingUsers.length === 1 ? `${typingUsers[0]?.name || 'Someone'} is typing...` : 'Multiple people are typing...'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
                         <div ref={messagesEndRef} />
                       </>
                     )}
@@ -434,9 +675,9 @@ function ChatPageComponent(): React.ReactElement {
                       <Input
                         placeholder="Type a message..."
                         value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
+                        onChange={(e) => handleTyping(e.target.value)}
                         className="flex-1"
-                        disabled={sending}
+                        disabled={sending || !socketConnected}
                       />
                       
                       <Button
@@ -469,6 +710,33 @@ function ChatPageComponent(): React.ReactElement {
           </div>
         </div>
       </div>
+
+      {/* Call Interface */}
+      <CallInterface
+        isVisible={showCallInterface}
+        onClose={() => setShowCallInterface(false)}
+      />
+
+      {/* Incoming Call */}
+      {incomingCall && (
+        <IncomingCall
+          caller={incomingCall.caller}
+          callType={incomingCall.callType}
+          onAccept={handleAcceptCall}
+          onReject={handleRejectCall}
+        />
+      )}
+
+      {/* Profile Modal */}
+      {selectedChat && (
+        <ProfileModal
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          userId={selectedChat.participants.find(p => p.id !== user?.id)?.id || ''}
+          onStartCall={handleInitiateCall}
+          onSendMessage={() => setShowProfileModal(false)}
+        />
+      )}
     </div>
   );
 }

@@ -15,22 +15,33 @@ import { cn, NIGERIAN_STATES } from '@/lib/utils';
 
 const categories = [
   { name: 'All Categories', slug: 'all' },
-  { name: 'Electronics', slug: 'electronics' },
-  { name: 'Fashion', slug: 'fashion' },
-  { name: 'Home & Garden', slug: 'home-garden' },
-  { name: 'Sports', slug: 'sports' },
-  { name: 'Books', slug: 'books' },
-  { name: 'Toys', slug: 'toys' },
-  { name: 'Automotive', slug: 'automotive' },
-  { name: 'Beauty', slug: 'beauty' },
+  { name: 'Electronics', slug: 'ELECTRONICS' },
+  { name: 'Fashion', slug: 'FASHION' },
+  { name: 'Vehicles', slug: 'VEHICLES' },
+  { name: 'Home & Garden', slug: 'HOME_GARDEN' },
+  { name: 'Books & Education', slug: 'BOOKS_EDUCATION' },
+  { name: 'Health & Beauty', slug: 'HEALTH_BEAUTY' },
+  { name: 'Sports & Recreation', slug: 'SPORTS_RECREATION' },
+  { name: 'Baby & Kids', slug: 'BABY_KIDS' },
+  { name: 'Agriculture', slug: 'AGRICULTURE' },
+  { name: 'Services', slug: 'SERVICES' },
+  { name: 'Arts & Crafts', slug: 'ART_CRAFTS' },
+  { name: 'Musical Instruments', slug: 'MUSICAL_INSTRUMENTS' },
+  { name: 'Furniture', slug: 'FURNITURE' },
+  { name: 'Appliances', slug: 'APPLIANCES' },
+  { name: 'Books', slug: 'BOOKS' },
+  { name: 'Sports', slug: 'SPORTS' },
+  { name: 'Toys', slug: 'TOYS' },
+  { name: 'Beauty', slug: 'BEAUTY' },
+  { name: 'Other', slug: 'OTHER' },
 ];
 
 const sortOptions = [
   { name: 'Newest First', value: 'newest' },
-  { name: 'Oldest First', value: 'oldest' },
-  { name: 'Price: Low to High', value: 'price-low' },
-  { name: 'Price: High to Low', value: 'price-high' },
-  { name: 'Most Popular', value: 'popular' },
+  { name: 'Price: Low to High', value: 'price_asc' },
+  { name: 'Price: High to Low', value: 'price_desc' },
+  { name: 'Most Popular', value: 'most_viewed' },
+  { name: 'Most Relevant', value: 'relevance' },
 ];
 
 export default function FeedPage(): React.ReactElement {
