@@ -8,7 +8,6 @@ import {
   TextStyle,
   TextInputProps,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPOGRAPHY } from '@/constants';
 
 export interface InputProps extends Omit<TextInputProps, 'style'> {
@@ -19,8 +18,8 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
   error?: string;
   required?: boolean;
   disabled?: boolean;
-  leftIcon?: keyof typeof Ionicons.glyphMap;
-  rightIcon?: keyof typeof Ionicons.glyphMap;
+  leftIcon?: string;
+  rightIcon?: string;
   onRightIconPress?: () => void;
   multiline?: boolean;
   numberOfLines?: number;
@@ -109,9 +108,38 @@ export const Input: React.FC<InputProps> = ({
 
   const shouldShowPasswordToggle = secureTextEntry && rightIcon === undefined;
   const finalSecureTextEntry = secureTextEntry && !isPasswordVisible;
-  const finalRightIcon = shouldShowPasswordToggle 
+  const finalRightIcon = shouldShowPasswordToggle
     ? (isPasswordVisible ? 'eye-off' : 'eye')
     : rightIcon;
+
+  const getIconSymbol = (iconName: string): string => {
+    const iconMap: { [key: string]: string } = {
+      'eye': '👁',
+      'eye-off': '🙈',
+      'person': '👤',
+      'mail': '✉️',
+      'lock-closed': '🔒',
+      'phone': '📞',
+      'search': '🔍',
+      'location': '📍',
+      'camera': '📷',
+      'image': '🖼️',
+      'add': '➕',
+      'checkmark': '✓',
+      'close': '✕',
+      'arrow-back': '←',
+      'arrow-forward': '→',
+      'heart': '♡',
+      'heart-filled': '♥',
+      'star': '☆',
+      'star-filled': '★',
+      'home': '🏠',
+      'settings': '⚙️',
+      'menu': '☰',
+      'more': '⋯'
+    };
+    return iconMap[iconName] || '•';
+  };
 
   return (
     <View style={[getContainerStyle(), containerStyle]}>
@@ -124,12 +152,15 @@ export const Input: React.FC<InputProps> = ({
       
       <View style={getInputContainerStyle()}>
         {leftIcon && (
-          <Ionicons
-            name={leftIcon}
-            size={20}
-            color={isFocused ? COLORS.primary.DEFAULT : COLORS.neutral.gray}
-            style={{ marginRight: 8 }}
-          />
+          <View style={{ marginRight: 8, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{
+              fontSize: 18,
+              color: isFocused ? COLORS.primary.DEFAULT : COLORS.neutral.gray,
+              textAlign: 'center'
+            }}>
+              {getIconSymbol(leftIcon)}
+            </Text>
+          </View>
         )}
         
         <TextInput
@@ -153,14 +184,16 @@ export const Input: React.FC<InputProps> = ({
         {finalRightIcon && (
           <TouchableOpacity
             onPress={shouldShowPasswordToggle ? handleTogglePasswordVisibility : onRightIconPress}
-            style={{ marginLeft: 8 }}
+            style={{ marginLeft: 8, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' }}
             disabled={!shouldShowPasswordToggle && !onRightIconPress}
           >
-            <Ionicons
-              name={finalRightIcon}
-              size={20}
-              color={isFocused ? COLORS.primary.DEFAULT : COLORS.neutral.gray}
-            />
+            <Text style={{
+              fontSize: 18,
+              color: isFocused ? COLORS.primary.DEFAULT : COLORS.neutral.gray,
+              textAlign: 'center'
+            }}>
+              {getIconSymbol(finalRightIcon)}
+            </Text>
           </TouchableOpacity>
         )}
       </View>
