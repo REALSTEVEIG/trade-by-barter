@@ -73,20 +73,25 @@ export default function FeedPage(): React.ReactElement {
         sortBy: sortBy,
       };
 
+      console.log('Fetching listings with params:', params);
       const response = await listingsApi.getListings(params);
-      const responseData = response.data as any;
+      console.log('API Response:', response);
+      
+      // Handle the response structure from backend
+      const responseData = response.data || response;
       
       if (reset) {
-        setListings(responseData.listings || []);
+        setListings((responseData as any).listings || []);
         setPage(1);
       } else {
-        setListings(prev => [...(prev || []), ...(responseData.listings || [])]);
+        setListings(prev => [...(prev || []), ...((responseData as any).listings || [])]);
       }
       
-      setTotalCount(responseData.pagination?.total || 0);
-      setHasMore(responseData.pagination?.hasNext || false);
+      setTotalCount((responseData as any).pagination?.total || 0);
+      setHasMore((responseData as any).pagination?.hasNext || false);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load listings');
+      console.error('Fetch listings error:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to load listings');
     } finally {
       setLoading(false);
     }
