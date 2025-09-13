@@ -278,7 +278,7 @@ __decorate([
 ], ListingsController.prototype, "getListingImages", null);
 exports.ListingsController = ListingsController = __decorate([
     (0, swagger_1.ApiTags)('listings'),
-    (0, common_1.Controller)('api/v1/listings'),
+    (0, common_1.Controller)('listings'),
     __metadata("design:paramtypes", [listings_service_1.ListingsService,
         upload_service_1.UploadService])
 ], ListingsController);

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Star, Settings, CheckCircle, Eye, Home, FileText, MessageCircle, User } from 'lucide-react';
+import { ArrowLeft, Star, Settings, CheckCircle, Eye, Home, FileText, MessageCircle, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +39,7 @@ type TabType = 'listings' | 'trades' | 'reviews';
 
 export default function ProfilePage(): React.ReactElement {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('listings');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [listings, setListings] = useState<UserListing[]>([]);
@@ -100,7 +100,7 @@ export default function ProfilePage(): React.ReactElement {
     }
   ];
 
-  const displayListings = listings.length > 0 ? listings : mockListings;
+  const displayListings = listings && listings.length > 0 ? listings : mockListings;
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -184,10 +184,29 @@ export default function ProfilePage(): React.ReactElement {
               Edit profile
             </Button>
             <Button
-              className="flex-1 max-w-40"
+              variant="outline"
               onClick={() => router.push('/profile/verification')}
+              className="flex-1 max-w-40"
             >
               Request verification
+            </Button>
+          </div>
+          
+          <div className="mt-4 flex justify-center">
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await logout();
+                  router.push('/auth/login');
+                } catch (error) {
+                  console.error('Logout error:', error);
+                }
+              }}
+              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
             </Button>
           </div>
         </div>

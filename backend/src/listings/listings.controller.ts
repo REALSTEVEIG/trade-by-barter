@@ -25,7 +25,7 @@ import { CreateListingDto, UpdateListingDto, SearchListingsDto } from './dto';
 import type { ListingResponse, SearchListingsResponse, CategoryResponse, LocationResponse } from './dto';
 
 @ApiTags('listings')
-@Controller('api/v1/listings')
+@Controller('listings')
 export class ListingsController {
   constructor(
     private readonly listingsService: ListingsService,

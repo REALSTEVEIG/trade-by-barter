@@ -70,20 +70,21 @@ export default function FeedPage(): React.ReactElement {
         ...(selectedCategory !== 'all' && { category: selectedCategory }),
         ...(selectedLocation && { location: selectedLocation }),
         ...(searchQuery && { query: searchQuery }),
-        sort: sortBy,
+        sortBy: sortBy,
       };
 
       const response = await listingsApi.getListings(params);
+      const responseData = response.data as any;
       
       if (reset) {
-        setListings(response.data as Listing[]);
+        setListings(responseData.listings || []);
         setPage(1);
       } else {
-        setListings(prev => [...prev, ...(response.data as Listing[])]);
+        setListings(prev => [...(prev || []), ...(responseData.listings || [])]);
       }
       
-      setTotalCount(response.pagination.total);
-      setHasMore(response.pagination.page < response.pagination.pages);
+      setTotalCount(responseData.pagination?.total || 0);
+      setHasMore(responseData.pagination?.hasNext || false);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load listings');
     } finally {
@@ -133,7 +134,7 @@ export default function FeedPage(): React.ReactElement {
     }
   };
 
-  if (loading && listings.length === 0) {
+  if (loading && (!listings || listings.length === 0)) {
     return (
       <div className="min-h-screen bg-background-light">
         <Header user={headerUser} onSearch={handleSearch} />
@@ -255,7 +256,7 @@ export default function FeedPage(): React.ReactElement {
         )}
 
         {/* Listings Grid */}
-        {listings.length > 0 ? (
+        {listings && listings.length > 0 ? (
           <>
             <div className={cn(
               viewMode === 'grid' 

@@ -1,5 +1,4 @@
 import { Platform } from 'react-native';
-import Constants from 'expo-constants';
 
 // Network configuration for different environments
 const getBaseURL = (): string => {
@@ -8,23 +7,15 @@ const getBaseURL = (): string => {
     return process.env.EXPO_PUBLIC_API_URL;
   }
 
-  // Development environment - auto-detect the best URL
-  const debuggerHost = Constants.expoConfig?.hostUri?.split(':')[0];
-  
-  // For physical devices, use the debugger host (your machine's IP)
-  // For simulators, use localhost
-  if (debuggerHost && debuggerHost !== 'localhost') {
-    // Physical device - use the Expo server IP with backend port
-    return `http://${debuggerHost}:4000/api/v1`;
-  }
-  
-  // Simulator or localhost fallback
+  // Development environment - use simple fallback without expo-constants
+  // For development, default to localhost with platform-specific handling
   if (Platform.OS === 'android') {
     // Android emulator uses 10.0.2.2 to access host localhost
     return 'http://10.0.2.2:4000/api/v1';
   }
   
-  // iOS simulator can use localhost directly
+  // iOS simulator and physical devices can use localhost for now
+  // For physical devices, user can override with EXPO_PUBLIC_API_URL
   return 'http://localhost:4000/api/v1';
 };
 
@@ -47,13 +38,12 @@ export const ENV_INFO = {
   isDevelopment: __DEV__,
   isProduction: !__DEV__,
   platform: Platform.OS,
-  debuggerHost: Constants.expoConfig?.hostUri?.split(':')[0],
-  expoVersion: Constants.expoVersion,
   
-  // Helper to check if running on physical device
+  // Helper to check if running on physical device (simplified without expo-constants)
   isPhysicalDevice: () => {
-    const debuggerHost = Constants.expoConfig?.hostUri?.split(':')[0];
-    return debuggerHost && debuggerHost !== 'localhost' && debuggerHost !== '127.0.0.1';
+    // For now, assume simulator for development
+    // This can be enhanced later with a safer expo-constants import
+    return false;
   },
 };
 
@@ -64,10 +54,6 @@ export const getNetworkInfo = (): string => {
   info.push(`Platform: ${Platform.OS}`);
   info.push(`Environment: ${__DEV__ ? 'Development' : 'Production'}`);
   info.push(`Device Type: ${ENV_INFO.isPhysicalDevice() ? 'Physical Device' : 'Simulator/Emulator'}`);
-  
-  if (ENV_INFO.debuggerHost) {
-    info.push(`Debugger Host: ${ENV_INFO.debuggerHost}`);
-  }
   
   return info.join('\n');
 };
