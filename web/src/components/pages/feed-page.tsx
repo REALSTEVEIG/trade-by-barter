@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Filter, SlidersHorizontal, Grid, List } from 'lucide-react';
+import { Filter, SlidersHorizontal, Grid, List, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loading } from '@/components/ui/loading';
@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { listingsApi } from '@/lib/api';
 import { Listing } from '@/types';
 import { cn, NIGERIAN_STATES } from '@/lib/utils';
+import Link from 'next/link';
 
 const categories = [
   { name: 'All Categories', slug: 'all' },
@@ -166,6 +167,21 @@ export default function FeedPage(): React.ReactElement {
       <Header user={headerUser} onSearch={handleSearch} />
 
       <div className="container mx-auto px-4 py-8">
+        {/* Post Item Button */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="heading-1 mb-2">Marketplace</h1>
+            <p className="subtext">Discover amazing items to trade across Nigeria</p>
+          </div>
+          {user && (
+            <Link href="/listings/create">
+              <Button className="bg-primary hover:bg-primary-dark text-white flex items-center gap-2">
+                <Plus className="h-5 w-5" />
+                Post Item
+              </Button>
+            </Link>
+          )}
+        </div>
         {/* Filters Section */}
         <div className="mb-8">
           {/* Category Pills */}
@@ -332,6 +348,18 @@ export default function FeedPage(): React.ReactElement {
           )
         )}
       </div>
+
+      {/* Floating Action Button */}
+      {user && (
+        <Link href="/listings/create">
+          <Button
+            className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary hover:bg-primary-dark text-white shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
+            size="lg"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        </Link>
+      )}
 
       <Footer />
     </div>
