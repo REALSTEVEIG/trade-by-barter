@@ -175,8 +175,7 @@ export default function FeedPage(): React.ReactElement {
           </div>
           {user && (
             <Link href="/listings/create">
-              <Button className="bg-primary hover:bg-primary-dark text-white flex items-center gap-2">
-                <Plus className="h-5 w-5" />
+              <Button className="bg-primary hover:bg-primary-dark text-white">
                 Post Item
               </Button>
             </Link>
@@ -352,12 +351,13 @@ export default function FeedPage(): React.ReactElement {
       {/* Floating Action Button */}
       {user && (
         <Link href="/listings/create">
-          <Button
-            className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary hover:bg-primary-dark text-white shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
-            size="lg"
+          <div
+            className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary hover:bg-primary-dark text-white shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center cursor-pointer"
+            aria-label="Post new item"
+            title="Post new item"
           >
-            <Plus className="h-6 w-6" />
-          </Button>
+            <Plus className="h-8 w-8 stroke-2 text-white stroke-white" style={{ color: 'white', stroke: 'white' }} />
+          </div>
         </Link>
       )}
 
