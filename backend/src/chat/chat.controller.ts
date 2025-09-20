@@ -25,7 +25,7 @@ import { ChatResponse, UserSummary } from './dto/chat-response.dto';
 import { MessageResponse, MessageHistoryResponse } from './dto/message-response.dto';
 
 @ApiTags('Chat')
-@Controller('api/v1/chats')
+@Controller('chats')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class ChatController {

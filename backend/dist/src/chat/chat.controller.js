@@ -449,7 +449,7 @@ __decorate([
 ], ChatController.prototype, "stopTyping", null);
 exports.ChatController = ChatController = __decorate([
     (0, swagger_1.ApiTags)('Chat'),
-    (0, common_1.Controller)('api/v1/chats'),
+    (0, common_1.Controller)('chats'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)(),
     __metadata("design:paramtypes", [chat_service_1.ChatService])
