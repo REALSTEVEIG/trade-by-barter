@@ -55,9 +55,14 @@ class SocketService {
       if (token && userStr) {
         const user = JSON.parse(userStr);
         this.auth = { token, userId: user.id };
+        console.log('Socket auth initialized successfully');
+      } else {
+        console.warn('No token or user data found for socket authentication');
+        this.auth = null;
       }
     } catch (error) {
       console.error('Failed to initialize socket auth:', error);
+      this.auth = null;
     }
   }
 
@@ -68,15 +73,16 @@ class SocketService {
     }
 
     try {
-      // Ensure we have auth before connecting
-      if (!this.auth) {
-        await this.initializeAuth();
-      }
+      // Always refresh auth before connecting
+      await this.initializeAuth();
 
-      if (!this.auth) {
+      if (!this.auth?.token) {
         console.warn('No authentication available for socket connection');
+        // Return false but don't block other functionality
         return false;
       }
+
+      console.log('Connecting socket with authentication...');
 
       // Create socket connection with auth
       this.socket = io(API_CONFIG.WS_URL, {
@@ -304,11 +310,14 @@ class SocketService {
   }
 
   async updateAuth() {
+    console.log('Updating socket authentication...');
     await this.initializeAuth();
-    if (this.isConnected && this.auth) {
-      // Reconnect with new auth
-      this.disconnect();
-      await this.connect();
+    if (this.auth?.token) {
+      if (this.isConnected) {
+        // Reconnect with new auth
+        this.disconnect();
+        await this.connect();
+      }
     }
   }
 }

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authApi } from '@/lib/api';
+import socketService from '@/lib/socket';
 import { User, LoginCredentials, SignupData } from '@/types';
 import { STORAGE_KEYS } from '@/constants';
 
@@ -55,6 +56,15 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
         isLoading: false,
         error: null,
       }));
+
+      // Initialize socket connection with authentication if user is authenticated
+      try {
+        socketService.connect();
+        console.log('Socket connected during auth initialization');
+      } catch (socketError) {
+        console.error('Failed to connect socket during auth initialization:', socketError);
+        // Don't fail initialization if socket connection fails
+      }
     } catch (error) {
       // Token is invalid, clear it
       await AsyncStorage.multiRemove([
@@ -115,6 +125,15 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
         isLoading: false,
         error: null,
       }));
+
+      // Initialize socket connection with authentication
+      try {
+        socketService.connect();
+        console.log('Socket connected after login');
+      } catch (socketError) {
+        console.error('Failed to connect socket after login:', socketError);
+        // Don't fail login if socket connection fails
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       let errorMessage = 'Login failed. Please try again.';
@@ -179,6 +198,15 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
         isLoading: false,
         error: null,
       }));
+
+      // Initialize socket connection with authentication
+      try {
+        socketService.connect();
+        console.log('Socket connected after signup');
+      } catch (socketError) {
+        console.error('Failed to connect socket after signup:', socketError);
+        // Don't fail signup if socket connection fails
+      }
     } catch (error: any) {
       console.error('Signup error:', error);
       const errorMessage = error.response?.data?.message || 'Signup failed. Please try again.';
@@ -207,6 +235,14 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
         STORAGE_KEYS.REFRESH_TOKEN,
         STORAGE_KEYS.USER_DATA,
       ]);
+      
+      // Disconnect socket
+      try {
+        socketService.disconnect();
+        console.log('Socket disconnected during logout');
+      } catch (socketError) {
+        console.error('Failed to disconnect socket during logout:', socketError);
+      }
       
       setState({
         user: null,
