@@ -8,7 +8,15 @@ import {
   StatusBar,
   Modal,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Expand,
+  Video,
+  Phone,
+  PhoneOff,
+  Mic,
+  MicOff,
+  Minimize2
+} from 'lucide-react-native';
 import { webrtcService, CallState, CallUser } from '../services/webrtc';
 
 const { width } = Dimensions.get('window');
@@ -94,7 +102,7 @@ export function CallInterface({ isVisible, onClose }: CallInterfaceProps) {
               </Text>
             </View>
             <TouchableOpacity onPress={handleToggleMinimize} style={styles.minimizedButton}>
-              <Ionicons name="expand" size={20} color="#FFFFFF" />
+              <Expand size={20} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
           
@@ -103,14 +111,14 @@ export function CallInterface({ isVisible, onClose }: CallInterfaceProps) {
               onPress={handleToggleAudio}
               style={[styles.miniControlButton, !callState.isAudioEnabled && styles.mutedButton]}
             >
-              <Ionicons 
-                name={callState.isAudioEnabled ? "mic" : "mic-off"} 
-                size={16} 
-                color="#FFFFFF" 
-              />
+              {callState.isAudioEnabled ? (
+                <Mic size={16} color="#FFFFFF" />
+              ) : (
+                <MicOff size={16} color="#FFFFFF" />
+              )}
             </TouchableOpacity>
             <TouchableOpacity onPress={handleEndCall} style={styles.endCallMiniButton}>
-              <Ionicons name="call" size={16} color="#FFFFFF" />
+              <PhoneOff size={16} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         </View>
@@ -146,7 +154,7 @@ export function CallInterface({ isVisible, onClose }: CallInterfaceProps) {
               {/* Remote Video Placeholder */}
               <View style={styles.remoteVideo}>
                 <View style={styles.videoPlaceholder}>
-                  <Ionicons name="videocam" size={64} color="#6B7280" />
+                  <Video size={64} color="#6B7280" />
                   <Text style={styles.videoPlaceholderText}>Video Stream</Text>
                 </View>
               </View>
@@ -154,7 +162,7 @@ export function CallInterface({ isVisible, onClose }: CallInterfaceProps) {
               {/* Local Video Placeholder (Picture-in-picture) */}
               <View style={styles.localVideo}>
                 <View style={styles.localVideoPlaceholder}>
-                  <Ionicons name="videocam" size={24} color="#6B7280" />
+                  <Video size={24} color="#6B7280" />
                 </View>
               </View>
             </View>
@@ -177,7 +185,7 @@ export function CallInterface({ isVisible, onClose }: CallInterfaceProps) {
           {callState.callStatus !== 'connected' && (
             <View style={styles.statusOverlay}>
               <View style={styles.statusContent}>
-                <Ionicons name="call" size={48} color="#FFFFFF" />
+                <Phone size={48} color="#FFFFFF" />
                 <Text style={styles.statusText}>{callState.callStatus}...</Text>
               </View>
             </View>
@@ -190,11 +198,11 @@ export function CallInterface({ isVisible, onClose }: CallInterfaceProps) {
             onPress={handleToggleAudio}
             style={[styles.controlButton, !callState.isAudioEnabled && styles.mutedButton]}
           >
-            <Ionicons 
-              name={callState.isAudioEnabled ? "mic" : "mic-off"} 
-              size={24} 
-              color="#FFFFFF" 
-            />
+            {callState.isAudioEnabled ? (
+              <Mic size={24} color="#FFFFFF" />
+            ) : (
+              <MicOff size={24} color="#FFFFFF" />
+            )}
           </TouchableOpacity>
 
           {callState.callType === 'video' && (
@@ -202,20 +210,20 @@ export function CallInterface({ isVisible, onClose }: CallInterfaceProps) {
               onPress={handleToggleVideo}
               style={[styles.controlButton, !callState.isVideoEnabled && styles.mutedButton]}
             >
-              <Ionicons 
-                name={callState.isVideoEnabled ? "videocam" : "videocam-off"} 
-                size={24} 
-                color="#FFFFFF" 
-              />
+              {callState.isVideoEnabled ? (
+                <Video size={24} color="#FFFFFF" />
+              ) : (
+                <Video size={24} color="#FFFFFF" />
+              )}
             </TouchableOpacity>
           )}
 
           <TouchableOpacity onPress={handleEndCall} style={styles.endCallButton}>
-            <Ionicons name="call" size={24} color="#FFFFFF" />
+            <PhoneOff size={24} color="#FFFFFF" />
           </TouchableOpacity>
 
           <TouchableOpacity onPress={handleToggleMinimize} style={styles.controlButton}>
-            <Ionicons name="contract" size={24} color="#FFFFFF" />
+            <Minimize2 size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
@@ -251,11 +259,11 @@ export function IncomingCall({ caller, callType, onAccept, onReject }: IncomingC
 
           <View style={styles.incomingCallActions}>
             <TouchableOpacity onPress={onReject} style={styles.rejectButton}>
-              <Ionicons name="call" size={32} color="#FFFFFF" />
+              <PhoneOff size={32} color="#FFFFFF" />
             </TouchableOpacity>
             
             <TouchableOpacity onPress={onAccept} style={styles.acceptButton}>
-              <Ionicons name="call" size={32} color="#FFFFFF" />
+              <Phone size={32} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         </View>

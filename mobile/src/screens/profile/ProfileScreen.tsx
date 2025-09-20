@@ -9,7 +9,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  User,
+  List,
+  Heart,
+  ArrowLeftRight,
+  Wallet,
+  ShieldCheck,
+  Settings,
+  HelpCircle,
+  ChevronRight,
+  RotateCw,
+  Camera
+} from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/contexts/auth-context';
 import { COLORS, TYPOGRAPHY, SUCCESS_MESSAGES, ERROR_MESSAGES } from '@/constants';
@@ -98,49 +110,49 @@ const ProfileScreen: React.FC = () => {
 
   const menuItems = [
     {
-      icon: 'person-outline',
+      icon: User,
       title: 'Edit Profile',
       subtitle: 'Update your profile information',
       onPress: () => Alert.alert('Coming Soon', 'Profile editing will be available soon!'),
     },
     {
-      icon: 'list-outline',
+      icon: List,
       title: 'My Listings',
       subtitle: 'View and manage your items',
       onPress: () => {},
     },
     {
-      icon: 'heart-outline',
+      icon: Heart,
       title: 'Favorites',
       subtitle: 'Items you liked',
       onPress: () => {},
     },
     {
-      icon: 'swap-horizontal-outline',
+      icon: ArrowLeftRight,
       title: 'My Offers',
       subtitle: 'Track your trade offers',
       onPress: () => navigation.navigate('Offers' as any),
     },
     {
-      icon: 'wallet-outline',
+      icon: Wallet,
       title: 'Wallet',
       subtitle: 'Manage your payments',
       onPress: () => navigation.navigate('Wallet' as any),
     },
     {
-      icon: 'shield-checkmark-outline',
+      icon: ShieldCheck,
       title: 'Verification',
       subtitle: 'Verify your account',
       onPress: () => {},
     },
     {
-      icon: 'settings-outline',
+      icon: Settings,
       title: 'Settings',
       subtitle: 'App preferences',
       onPress: () => {},
     },
     {
-      icon: 'help-circle-outline',
+      icon: HelpCircle,
       title: 'Help & Support',
       subtitle: 'Get help and contact us',
       onPress: () => {},
@@ -155,8 +167,7 @@ const ProfileScreen: React.FC = () => {
       activeOpacity={0.7}
     >
       <View style={styles.menuIconContainer}>
-        <Ionicons
-          name={item.icon}
+        <item.icon
           size={24}
           color={COLORS.primary.DEFAULT}
         />
@@ -165,8 +176,7 @@ const ProfileScreen: React.FC = () => {
         <Text style={styles.menuTitle}>{item.title}</Text>
         <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
       </View>
-      <Ionicons
-        name="chevron-forward"
+      <ChevronRight
         size={20}
         color={COLORS.neutral.gray}
       />
@@ -191,9 +201,9 @@ const ProfileScreen: React.FC = () => {
             />
             <View style={styles.cameraIcon}>
               {isUpdatingAvatar ? (
-                <Ionicons name="refresh" size={16} color="white" />
+                <RotateCw size={16} color="white" />
               ) : (
-                <Ionicons name="camera" size={16} color="white" />
+                <Camera size={16} color="white" />
               )}
             </View>
           </TouchableOpacity>

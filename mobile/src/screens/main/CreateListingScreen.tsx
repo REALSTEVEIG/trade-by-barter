@@ -15,7 +15,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  X,
+  Check,
+  ArrowLeft,
+  Camera,
+  ChevronDown
+} from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { 
   COLORS, 
@@ -264,7 +270,7 @@ const CreateListingScreen: React.FC = () => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select {placeholder}</Text>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={COLORS.neutral.dark} />
+              <X size={24} color={COLORS.neutral.dark} />
             </TouchableOpacity>
           </View>
           <FlatList
@@ -288,7 +294,7 @@ const CreateListingScreen: React.FC = () => {
                   {item.label}
                 </Text>
                 {selectedValue === item.value && (
-                  <Ionicons name="checkmark" size={20} color={COLORS.primary.DEFAULT} />
+                  <Check size={20} color={COLORS.primary.DEFAULT} />
                 )}
               </TouchableOpacity>
             )}
@@ -315,7 +321,7 @@ const CreateListingScreen: React.FC = () => {
             onPress={() => navigation.goBack()}
             style={styles.backButton}
           >
-            <Ionicons name="arrow-back" size={24} color={COLORS.neutral.dark} />
+            <ArrowLeft size={24} color={COLORS.neutral.dark} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Post an Item</Text>
           <View style={styles.headerRight} />
@@ -333,7 +339,7 @@ const CreateListingScreen: React.FC = () => {
                     style={styles.removeImageButton}
                     onPress={() => removeImage(index)}
                   >
-                    <Ionicons name="close" size={16} color="white" />
+                    <X size={16} color="white" />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -343,7 +349,7 @@ const CreateListingScreen: React.FC = () => {
                   style={styles.addImageButton}
                   onPress={handleImagePicker}
                 >
-                  <Ionicons name="camera" size={24} color={COLORS.neutral.gray} />
+                  <Camera size={24} color={COLORS.neutral.gray} />
                   <Text style={styles.addImageText}>Add Photo</Text>
                 </TouchableOpacity>
               )}
@@ -390,7 +396,7 @@ const CreateListingScreen: React.FC = () => {
                   <Text style={[styles.dropdownText, !formData.category && styles.dropdownPlaceholder]}>
                     {getSelectedLabel(CATEGORIES, formData.category, 'Select category')}
                   </Text>
-                  <Ionicons name="chevron-down" size={20} color={COLORS.neutral.gray} />
+                  <ChevronDown size={20} color={COLORS.neutral.gray} />
                 </TouchableOpacity>
               </View>
 
@@ -403,7 +409,7 @@ const CreateListingScreen: React.FC = () => {
                   <Text style={[styles.dropdownText, !formData.condition && styles.dropdownPlaceholder]}>
                     {getSelectedLabel(PRODUCT_CONDITIONS, formData.condition, 'Select condition')}
                   </Text>
-                  <Ionicons name="chevron-down" size={20} color={COLORS.neutral.gray} />
+                  <ChevronDown size={20} color={COLORS.neutral.gray} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -431,7 +437,7 @@ const CreateListingScreen: React.FC = () => {
                   <Text style={[styles.dropdownText, !formData.state && styles.dropdownPlaceholder]}>
                     {formData.state || 'Select state'}
                   </Text>
-                  <Ionicons name="chevron-down" size={20} color={COLORS.neutral.gray} />
+                  <ChevronDown size={20} color={COLORS.neutral.gray} />
                 </TouchableOpacity>
               </View>
             </View>

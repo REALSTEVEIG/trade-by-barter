@@ -9,7 +9,7 @@ import {
   StatusBar,
   TouchableOpacity,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Bell, User, Plus, Grid3X3 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, TYPOGRAPHY } from '@/constants';
@@ -129,13 +129,13 @@ export const HomeScreen: React.FC = () => {
             style={styles.iconButton}
             onPress={() => navigation.navigate('Notifications' as any)}
           >
-            <Ionicons name="notifications-outline" size={24} color={COLORS.neutral.dark} />
+            <Bell size={24} color={COLORS.neutral.dark} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.iconButton}
             onPress={() => navigation.navigate('Profile' as any)}
           >
-            <Ionicons name="person-outline" size={24} color={COLORS.neutral.dark} />
+            <User size={24} color={COLORS.neutral.dark} />
           </TouchableOpacity>
         </View>
       </View>
@@ -166,14 +166,14 @@ export const HomeScreen: React.FC = () => {
           onPress={() => console.log('Navigate to create listing')}
           variant="primary"
           style={styles.actionButton}
-          icon={<Ionicons name="add" size={20} color="#FFFFFF" />}
+          icon={<Plus size={20} color="#FFFFFF" />}
         />
         <Button
           title="Browse All"
           onPress={() => console.log('Navigate to feed')}
           variant="outline"
           style={styles.actionButton}
-          icon={<Ionicons name="grid-outline" size={20} color={COLORS.primary.DEFAULT} />}
+          icon={<Grid3X3 size={20} color={COLORS.primary.DEFAULT} />}
         />
       </View>
     </View>

@@ -6,7 +6,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Wallet } from 'lucide-react-native';
 import { COLORS, TYPOGRAPHY } from '@/constants';
 import Button from '@/components/ui/Button';
 
@@ -23,7 +23,7 @@ const WalletScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <Ionicons name="wallet-outline" size={80} color={COLORS.primary.DEFAULT} />
+          <Wallet size={80} color={COLORS.primary.DEFAULT} />
         </View>
         
         <Text style={styles.title}>My Wallet</Text>

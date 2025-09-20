@@ -8,7 +8,7 @@ import {
   ViewStyle,
   ImageStyle,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ImageIcon, Heart, MapPin } from 'lucide-react-native';
 import { Listing } from '@/types';
 import { COLORS, TYPOGRAPHY } from '@/constants';
 import Card from '@/components/ui/Card';
@@ -103,8 +103,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             />
           ) : (
             <View style={[getImageStyle(), styles.placeholderImage]}>
-              <Ionicons
-                name="image-outline"
+              <ImageIcon
                 size={variant === 'list' ? 24 : 32}
                 color={COLORS.neutral.light}
               />
@@ -118,10 +117,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               onPress={onFavorite}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons
-                name={listing.isFavorited ? 'heart' : 'heart-outline'}
+              <Heart
                 size={16}
                 color={listing.isFavorited ? '#EF4444' : '#6B7280'}
+                fill={listing.isFavorited ? '#EF4444' : 'transparent'}
               />
             </TouchableOpacity>
           )}
@@ -137,8 +136,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </Text>
           
           <View style={styles.locationContainer}>
-            <Ionicons
-              name="location-outline"
+            <MapPin
               size={12}
               color={COLORS.neutral.gray}
             />

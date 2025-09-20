@@ -13,7 +13,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  ArrowLeft,
+  Phone,
+  Video,
+  MessageCircle,
+  Clock,
+  Send
+} from 'lucide-react-native';
 import { chatApi } from '@/lib/api';
 import socketService from '@/lib/socket';
 import { AppStackParamList } from '@/navigation';
@@ -398,7 +405,7 @@ const ChatScreen: React.FC = () => {
 
   const renderEmpty = () => (
     <View style={styles.emptyState}>
-      <Ionicons name="chatbubble-outline" size={64} color={COLORS.neutral.gray} />
+      <MessageCircle size={64} color={COLORS.neutral.gray} />
       <Text style={styles.emptyTitle}>Start the conversation</Text>
       <Text style={styles.emptySubtitle}>Send a message to begin trading</Text>
     </View>
@@ -421,7 +428,7 @@ const ChatScreen: React.FC = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.neutral.dark} />
+          <ArrowLeft size={24} color={COLORS.neutral.dark} />
         </TouchableOpacity>
         
         <TouchableOpacity
@@ -453,14 +460,14 @@ const ChatScreen: React.FC = () => {
             onPress={() => handleInitiateCall('audio')}
             disabled={!isConnected}
           >
-            <Ionicons name="call" size={20} color={isConnected ? COLORS.primary.DEFAULT : COLORS.neutral.gray} />
+            <Phone size={20} color={isConnected ? COLORS.primary.DEFAULT : COLORS.neutral.gray} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.callButton}
             onPress={() => handleInitiateCall('video')}
             disabled={!isConnected}
           >
-            <Ionicons name="videocam" size={20} color={isConnected ? COLORS.primary.DEFAULT : COLORS.neutral.gray} />
+            <Video size={20} color={isConnected ? COLORS.primary.DEFAULT : COLORS.neutral.gray} />
           </TouchableOpacity>
         </View>
       </View>
@@ -506,11 +513,11 @@ const ChatScreen: React.FC = () => {
               onPress={handleSendMessage}
               disabled={!messageText.trim() || isSending || !isConnected}
             >
-              <Ionicons
-                name={isSending ? "hourglass" : "send"}
-                size={20}
-                color="white"
-              />
+              {isSending ? (
+                <Clock size={20} color="white" />
+              ) : (
+                <Send size={20} color="white" />
+              )}
             </TouchableOpacity>
           </View>
         </View>

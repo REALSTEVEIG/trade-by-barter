@@ -8,14 +8,14 @@ import {
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeftRight, Users, ShieldCheck, HelpCircle } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, TYPOGRAPHY } from '@/constants';
 import { Button } from '@/components/ui';
 
 interface OnboardingSlide {
   id: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: any;
   title: string;
   subtitle: string;
 }
@@ -23,19 +23,19 @@ interface OnboardingSlide {
 const slides: OnboardingSlide[] = [
   {
     id: '1',
-    icon: 'swap-horizontal',
+    icon: ArrowLeftRight,
     title: 'Trade goods-for-goods',
     subtitle: 'Exchange items directly with other users. No money involved, just fair trades.',
   },
   {
     id: '2',
-    icon: 'people',
+    icon: Users,
     title: 'Connect with traders',
     subtitle: 'Join a community of trusted traders across Nigeria. Build your reputation through successful trades.',
   },
   {
     id: '3',
-    icon: 'shield-checkmark',
+    icon: ShieldCheck,
     title: 'Safe and secure',
     subtitle: 'Trade with confidence using our secure platform. Every user is verified for your safety.',
   },
@@ -71,11 +71,10 @@ export const OnboardingScreen: React.FC = () => {
   const renderSlide = ({ item }: { item: OnboardingSlide }) => (
     <View style={styles.slide}>
       <View style={styles.iconContainer}>
-        <Ionicons
-          name={item.icon}
-          size={64}
-          color="#FFFFFF"
-        />
+        {React.createElement(item.icon, {
+          size: 64,
+          color: "#FFFFFF"
+        })}
       </View>
       
       <Text style={styles.title}>{item.title}</Text>
@@ -113,8 +112,7 @@ export const OnboardingScreen: React.FC = () => {
           style={styles.skipButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons
-            name="help-circle-outline"
+          <HelpCircle
             size={24}
             color={COLORS.neutral.gray}
           />

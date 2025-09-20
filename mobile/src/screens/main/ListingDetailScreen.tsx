@@ -14,7 +14,21 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  ArrowLeft,
+  Heart,
+  Share as ShareIcon,
+  Edit,
+  Trash2,
+  Image as ImageIcon,
+  X,
+  MapPin,
+  Clock,
+  AlertCircle,
+  User,
+  MessageCircle,
+  Users
+} from 'lucide-react-native';
 import { AppStackParamList } from '@/navigation';
 import { 
   COLORS, 
@@ -168,7 +182,7 @@ const ListingDetailScreen: React.FC = () => {
     if (!listing?.images || listing.images.length === 0) {
       return (
         <View style={styles.noImageContainer}>
-          <Ionicons name="image-outline" size={48} color={COLORS.neutral.gray} />
+          <ImageIcon size={48} color={COLORS.neutral.gray} />
           <Text style={styles.noImageText}>No images available</Text>
         </View>
       );
@@ -228,7 +242,7 @@ const ListingDetailScreen: React.FC = () => {
             {currentImageIndex + 1} / {listing?.images.length || 0}
           </Text>
           <TouchableOpacity onPress={() => setShowImageModal(false)}>
-            <Ionicons name="close" size={24} color="white" />
+            <X size={24} color="white" />
           </TouchableOpacity>
         </View>
         
@@ -273,7 +287,7 @@ const ListingDetailScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={48} color={COLORS.status.error} />
+          <AlertCircle size={48} color={COLORS.status.error} />
           <Text style={styles.errorText}>{error}</Text>
           <Button
             title="Go Back"
@@ -296,7 +310,7 @@ const ListingDetailScreen: React.FC = () => {
           onPress={() => navigation.goBack()}
           style={styles.headerButton}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.neutral.dark} />
+          <ArrowLeft size={24} color={COLORS.neutral.dark} />
         </TouchableOpacity>
         
         <View style={styles.headerActions}>
@@ -304,10 +318,10 @@ const ListingDetailScreen: React.FC = () => {
             onPress={handleFavoriteToggle}
             style={styles.headerButton}
           >
-            <Ionicons 
-              name={listing.isFavorited ? "heart" : "heart-outline"} 
-              size={24} 
+            <Heart
+              size={24}
               color={listing.isFavorited ? COLORS.status.error : COLORS.neutral.dark}
+              fill={listing.isFavorited ? COLORS.status.error : "transparent"}
             />
           </TouchableOpacity>
           
@@ -315,7 +329,7 @@ const ListingDetailScreen: React.FC = () => {
             onPress={handleShare}
             style={styles.headerButton}
           >
-            <Ionicons name="share-outline" size={24} color={COLORS.neutral.dark} />
+            <ShareIcon size={24} color={COLORS.neutral.dark} />
           </TouchableOpacity>
           
           {isOwner && (
@@ -324,7 +338,7 @@ const ListingDetailScreen: React.FC = () => {
                 onPress={handleEdit}
                 style={styles.headerButton}
               >
-                <Ionicons name="create-outline" size={24} color={COLORS.neutral.dark} />
+                <Edit size={24} color={COLORS.neutral.dark} />
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -332,7 +346,7 @@ const ListingDetailScreen: React.FC = () => {
                 style={styles.headerButton}
                 disabled={isDeleting}
               >
-                <Ionicons name="trash-outline" size={24} color={COLORS.status.error} />
+                <Trash2 size={24} color={COLORS.status.error} />
               </TouchableOpacity>
             </>
           )}
@@ -377,7 +391,7 @@ const ListingDetailScreen: React.FC = () => {
         {/* Location and Date */}
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>
-            <Ionicons name="location-outline" size={16} color={COLORS.neutral.gray} />
+            <MapPin size={16} color={COLORS.neutral.gray} />
             <Text style={styles.infoText}>
               {listing.specificLocation ? `${listing.specificLocation}, ` : ''}
               {listing.city}, {listing.state}
@@ -385,7 +399,7 @@ const ListingDetailScreen: React.FC = () => {
           </View>
           
           <View style={styles.infoRow}>
-            <Ionicons name="time-outline" size={16} color={COLORS.neutral.gray} />
+            <Clock size={16} color={COLORS.neutral.gray} />
             <Text style={styles.infoText}>
               Posted {formatTimeAgo(listing.createdAt)}
             </Text>
@@ -425,7 +439,7 @@ const ListingDetailScreen: React.FC = () => {
                   style={styles.avatarImage} 
                 />
               ) : (
-                <Ionicons name="person" size={24} color={COLORS.primary.DEFAULT} />
+                <User size={24} color={COLORS.primary.DEFAULT} />
               )}
             </View>
             
@@ -450,7 +464,7 @@ const ListingDetailScreen: React.FC = () => {
             variant="primary"
             size="lg"
             style={styles.actionButton}
-            icon={<Ionicons name="chatbubble-outline" size={20} color="white" />}
+            icon={<MessageCircle size={20} color="white" />}
           />
           
           <Button
@@ -459,7 +473,7 @@ const ListingDetailScreen: React.FC = () => {
             variant="outline"
             size="lg"
             style={styles.actionButton}
-            icon={<Ionicons name="people-outline" size={20} color={COLORS.primary.DEFAULT} />}
+            icon={<Users size={20} color={COLORS.primary.DEFAULT} />}
           />
         </View>
       )}

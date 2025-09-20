@@ -6,7 +6,7 @@ import {
   StyleSheet,
   ViewStyle,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Search, XCircle, Filter } from 'lucide-react-native';
 import { COLORS, TYPOGRAPHY } from '@/constants';
 
 export interface SearchBarProps {
@@ -65,8 +65,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         styles.searchContainer,
         isFocused && styles.searchContainerFocused
       ]}>
-        <Ionicons
-          name="search"
+        <Search
           size={20}
           color={isFocused ? COLORS.primary.DEFAULT : COLORS.neutral.gray}
           style={styles.searchIcon}
@@ -92,8 +91,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             style={styles.clearButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons
-              name="close-circle"
+            <XCircle
               size={18}
               color={COLORS.neutral.gray}
             />
@@ -107,8 +105,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           onPress={onFilterPress}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons
-            name="filter"
+          <Filter
             size={20}
             color={COLORS.neutral.dark}
           />

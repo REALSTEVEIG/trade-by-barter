@@ -7,7 +7,7 @@ import {
   ViewStyle,
   ImageStyle,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { User } from 'lucide-react-native';
 import { COLORS, TYPOGRAPHY } from '@/constants';
 
 export interface AvatarProps {
@@ -109,8 +109,7 @@ export const Avatar: React.FC<AvatarProps> = ({
           {name ? (
             <Text style={textStyle}>{getInitials()}</Text>
           ) : (
-            <Ionicons
-              name="person"
+            <User
               size={getFontSize()}
               color={COLORS.neutral.gray}
             />

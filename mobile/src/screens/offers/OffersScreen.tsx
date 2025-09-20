@@ -6,7 +6,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeftRight } from 'lucide-react-native';
 import { COLORS, TYPOGRAPHY } from '@/constants';
 import Button from '@/components/ui/Button';
 
@@ -19,7 +19,7 @@ const OffersScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <Ionicons name="swap-horizontal-outline" size={80} color={COLORS.primary.DEFAULT} />
+          <ArrowLeftRight size={80} color={COLORS.primary.DEFAULT} />
         </View>
         
         <Text style={styles.title}>My Offers</Text>

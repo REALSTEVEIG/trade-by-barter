@@ -1,7 +1,7 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+import { Home, Search, PlusCircle, MessageCircle, User } from 'lucide-react-native';
 import { useAuth } from '@/contexts/auth-context';
 import { COLORS } from '@/constants';
 
@@ -76,27 +76,26 @@ function MainTabNavigator() {
     <MainTab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName: any;
+          const iconProps = {
+            size: size,
+            color: color,
+            strokeWidth: focused ? 2.5 : 2,
+          };
 
           switch (route.name) {
             case 'Feed':
-              iconName = focused ? 'home' : 'home-outline';
-              break;
+              return <Home {...iconProps} />;
             case 'Search':
-              iconName = focused ? 'search' : 'search-outline';
-              break;
+              return <Search {...iconProps} />;
             case 'Create':
-              iconName = focused ? 'add-circle' : 'add-circle-outline';
-              break;
+              return <PlusCircle {...iconProps} />;
             case 'Chats':
-              iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
-              break;
+              return <MessageCircle {...iconProps} />;
             case 'Profile':
-              iconName = focused ? 'person' : 'person-outline';
-              break;
+              return <User {...iconProps} />;
+            default:
+              return <Home {...iconProps} />;
           }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: COLORS.primary.DEFAULT,
         tabBarInactiveTintColor: COLORS.neutral.gray,

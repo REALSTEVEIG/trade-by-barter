@@ -9,7 +9,16 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  ArrowLeft,
+  ArrowLeftRight,
+  MessageCircle,
+  Info,
+  Tag,
+  Bell,
+  X,
+  AlertCircle
+} from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { 
   COLORS, 
@@ -129,15 +138,15 @@ const NotificationsScreen: React.FC = () => {
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'trade':
-        return 'swap-horizontal';
+        return ArrowLeftRight;
       case 'message':
-        return 'chatbubble';
+        return MessageCircle;
       case 'system':
-        return 'information-circle';
+        return Info;
       case 'promotion':
-        return 'pricetag';
+        return Tag;
       default:
-        return 'notifications';
+        return Bell;
     }
   };
 
@@ -168,11 +177,10 @@ const NotificationsScreen: React.FC = () => {
             styles.iconContainer,
             { backgroundColor: getNotificationIconColor(item.type) + '20' }
           ]}>
-            <Ionicons
-              name={getNotificationIcon(item.type) as any}
-              size={20}
-              color={getNotificationIconColor(item.type)}
-            />
+            {React.createElement(getNotificationIcon(item.type), {
+              size: 20,
+              color: getNotificationIconColor(item.type)
+            })}
           </View>
           
           <View style={styles.notificationText}>
@@ -191,7 +199,7 @@ const NotificationsScreen: React.FC = () => {
             style={styles.deleteButton}
             onPress={() => deleteNotification(item.id)}
           >
-            <Ionicons name="close" size={16} color={COLORS.neutral.gray} />
+            <X size={16} color={COLORS.neutral.gray} />
           </TouchableOpacity>
         </View>
 
@@ -202,10 +210,9 @@ const NotificationsScreen: React.FC = () => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Ionicons 
-        name="notifications-outline" 
-        size={64} 
-        color={COLORS.neutral.gray} 
+      <Bell
+        size={64}
+        color={COLORS.neutral.gray}
       />
       <Text style={styles.emptyTitle}>No notifications</Text>
       <Text style={styles.emptyMessage}>
@@ -216,7 +223,7 @@ const NotificationsScreen: React.FC = () => {
 
   const renderError = () => (
     <View style={styles.errorContainer}>
-      <Ionicons name="alert-circle-outline" size={48} color={COLORS.status.error} />
+      <AlertCircle size={48} color={COLORS.status.error} />
       <Text style={styles.errorText}>{error}</Text>
       <Button
         title="Try Again"
@@ -238,7 +245,7 @@ const NotificationsScreen: React.FC = () => {
             onPress={() => navigation.goBack()}
             style={styles.backButton}
           >
-            <Ionicons name="arrow-back" size={24} color={COLORS.neutral.dark} />
+            <ArrowLeft size={24} color={COLORS.neutral.dark} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Notifications</Text>
         </View>

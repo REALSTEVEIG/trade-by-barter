@@ -7,7 +7,17 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  X,
+  Star,
+  ShieldCheck,
+  MapPin,
+  Calendar,
+  MessageCircle,
+  Phone,
+  Video,
+  Package
+} from 'lucide-react-native';
 import { COLORS, TYPOGRAPHY } from '@/constants';
 import Avatar from '@/components/ui/Avatar';
 
@@ -137,11 +147,11 @@ export function ProfileModal({
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
-      <Ionicons
+      <Star
         key={i}
-        name={i < Math.floor(rating) ? "star" : "star-outline"}
         size={16}
         color={i < Math.floor(rating) ? "#F59E0B" : "#D1D5DB"}
+        fill={i < Math.floor(rating) ? "#F59E0B" : "transparent"}
       />
     ));
   };
@@ -172,7 +182,7 @@ export function ProfileModal({
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profile</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color={COLORS.neutral.dark} />
+            <X size={24} color={COLORS.neutral.dark} />
           </TouchableOpacity>
         </View>
 
@@ -205,7 +215,7 @@ export function ProfileModal({
                   </Text>
                   {profile.isVerified && (
                     <View style={styles.verifiedBadge}>
-                      <Ionicons name="shield-checkmark" size={16} color="#10B981" />
+                      <ShieldCheck size={16} color="#10B981" />
                       <Text style={styles.verifiedText}>Verified</Text>
                     </View>
                   )}
@@ -214,12 +224,12 @@ export function ProfileModal({
                 <View style={styles.profileMeta}>
                   {profile.location && (
                     <View style={styles.metaRow}>
-                      <Ionicons name="location" size={16} color={COLORS.neutral.gray} />
+                      <MapPin size={16} color={COLORS.neutral.gray} />
                       <Text style={styles.metaText}>{profile.location}</Text>
                     </View>
                   )}
                   <View style={styles.metaRow}>
-                    <Ionicons name="calendar" size={16} color={COLORS.neutral.gray} />
+                    <Calendar size={16} color={COLORS.neutral.gray} />
                     <Text style={styles.metaText}>Joined {formatTimeAgo(profile.joinedAt)}</Text>
                   </View>
                 </View>
@@ -249,7 +259,7 @@ export function ProfileModal({
             <View style={styles.actionButtons}>
               {onSendMessage && (
                 <TouchableOpacity onPress={onSendMessage} style={[styles.actionButton, styles.primaryButton]}>
-                  <Ionicons name="chatbubble" size={20} color="#FFFFFF" />
+                  <MessageCircle size={20} color="#FFFFFF" />
                   <Text style={styles.primaryButtonText}>Message</Text>
                 </TouchableOpacity>
               )}
@@ -259,14 +269,14 @@ export function ProfileModal({
                     onPress={() => onStartCall('audio')}
                     style={[styles.actionButton, styles.secondaryButton]}
                   >
-                    <Ionicons name="call" size={20} color={COLORS.primary.DEFAULT} />
+                    <Phone size={20} color={COLORS.primary.DEFAULT} />
                     <Text style={styles.secondaryButtonText}>Call</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => onStartCall('video')}
                     style={[styles.actionButton, styles.secondaryButton]}
                   >
-                    <Ionicons name="videocam" size={20} color={COLORS.primary.DEFAULT} />
+                    <Video size={20} color={COLORS.primary.DEFAULT} />
                     <Text style={styles.secondaryButtonText}>Video</Text>
                   </TouchableOpacity>
                 </View>
@@ -309,7 +319,7 @@ export function ProfileModal({
                         <Text style={styles.listingDescription}>{listing.description}</Text>
                         <View style={styles.listingFooter}>
                           <View style={styles.locationRow}>
-                            <Ionicons name="location" size={12} color={COLORS.neutral.gray} />
+                            <MapPin size={12} color={COLORS.neutral.gray} />
                             <Text style={styles.locationText}>{listing.location}</Text>
                           </View>
                           <Text style={styles.dateText}>{formatTimeAgo(listing.createdAt)}</Text>
@@ -318,7 +328,7 @@ export function ProfileModal({
                     ))
                   ) : (
                     <View style={styles.emptyState}>
-                      <Ionicons name="cube-outline" size={48} color={COLORS.neutral.gray} />
+                      <Package size={48} color={COLORS.neutral.gray} />
                       <Text style={styles.emptyText}>No listings yet</Text>
                     </View>
                   )}
@@ -347,7 +357,7 @@ export function ProfileModal({
                     ))
                   ) : (
                     <View style={styles.emptyState}>
-                      <Ionicons name="star-outline" size={48} color={COLORS.neutral.gray} />
+                      <Star size={48} color={COLORS.neutral.gray} />
                       <Text style={styles.emptyText}>No reviews yet</Text>
                     </View>
                   )}

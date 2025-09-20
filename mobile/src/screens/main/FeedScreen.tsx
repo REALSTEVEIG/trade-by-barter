@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import { Wallet, List } from 'lucide-react-native';
 import { listingsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 import { AppStackParamList } from '@/navigation';
@@ -64,15 +64,19 @@ const FeedScreen: React.FC = () => {
       const newListings = response.data as Listing[];
 
       if (page === 1) {
-        setListings(newListings);
+        setListings(newListings || []);
       } else {
-        setListings(prev => [...prev, ...newListings]);
+        setListings(prev => [...(prev || []), ...(newListings || [])]);
       }
 
-      setHasNextPage(newListings.length === 20);
+      setHasNextPage((newListings || []).length === 20);
       setCurrentPage(page);
     } catch (error: any) {
       console.error('Error fetching listings:', error);
+      // Ensure listings is always an array even on error
+      if (page === 1) {
+        setListings([]);
+      }
       Alert.alert(
         'Error',
         error.response?.data?.message || ERROR_MESSAGES.NETWORK
@@ -119,7 +123,7 @@ const FeedScreen: React.FC = () => {
       
       // Update local state
       setListings(prev =>
-        prev.map(item =>
+        (prev || []).map(item =>
           item.id === listing.id
             ? { ...item, isFavorited: !item.isFavorited }
             : item
@@ -156,7 +160,7 @@ const FeedScreen: React.FC = () => {
           style={styles.walletButton}
           onPress={() => navigation.navigate('Wallet')}
         >
-          <Ionicons name="wallet-outline" size={24} color={COLORS.primary.DEFAULT} />
+          <Wallet size={24} color={COLORS.primary.DEFAULT} />
         </TouchableOpacity>
       </View>
 
@@ -179,7 +183,7 @@ const FeedScreen: React.FC = () => {
           {searchQuery ? `Search results for "${searchQuery}"` : 'Latest Listings'}
         </Text>
         <Text style={styles.listingCount}>
-          {listings.length} item{listings.length !== 1 ? 's' : ''}
+          {(listings || []).length} item{(listings || []).length !== 1 ? 's' : ''}
         </Text>
       </View>
     </View>
@@ -198,7 +202,7 @@ const FeedScreen: React.FC = () => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Ionicons name="list-outline" size={64} color={COLORS.neutral.gray} />
+      <List size={64} color={COLORS.neutral.gray} />
       <Text style={styles.emptyTitle}>No listings found</Text>
       <Text style={styles.emptySubtitle}>
         {searchQuery || selectedCategory
@@ -245,7 +249,7 @@ const FeedScreen: React.FC = () => {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.3}
         showsVerticalScrollIndicator={false}
-        columnWrapperStyle={styles.row}
+        columnWrapperStyle={listings && listings.length > 0 ? styles.row : undefined}
       />
     </SafeAreaView>
   );

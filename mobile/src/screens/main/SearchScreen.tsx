@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import { Search, Frown } from 'lucide-react-native';
 import { listingsApi } from '@/lib/api';
 import { AppStackParamList } from '@/navigation';
 import { Listing } from '@/types';
@@ -113,7 +113,7 @@ const SearchScreen: React.FC = () => {
     if (!hasSearched) {
       return (
         <View style={styles.emptyState}>
-          <Ionicons name="search-outline" size={64} color={COLORS.neutral.gray} />
+          <Search size={64} color={COLORS.neutral.gray} />
           <Text style={styles.emptyTitle}>Search TradeByBarter</Text>
           <Text style={styles.emptySubtitle}>
             Find amazing items to trade or buy
@@ -124,7 +124,7 @@ const SearchScreen: React.FC = () => {
 
     return (
       <View style={styles.emptyState}>
-        <Ionicons name="sad-outline" size={64} color={COLORS.neutral.gray} />
+        <Frown size={64} color={COLORS.neutral.gray} />
         <Text style={styles.emptyTitle}>No results found</Text>
         <Text style={styles.emptySubtitle}>
           Try different keywords or browse categories

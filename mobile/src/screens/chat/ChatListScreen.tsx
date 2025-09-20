@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import { MessageSquare, CloudOff } from 'lucide-react-native';
 import { chatApi } from '@/lib/api';
 import socketService from '@/lib/socket';
 import { AppStackParamList } from '@/navigation';
@@ -221,14 +221,14 @@ const ChatListScreen: React.FC = () => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Ionicons name="chatbubbles-outline" size={64} color={COLORS.neutral.gray} />
+      <MessageSquare size={64} color={COLORS.neutral.gray} />
       <Text style={styles.emptyTitle}>No conversations yet</Text>
       <Text style={styles.emptySubtitle}>
         Start trading to begin conversations with other users
       </Text>
       {!isConnected && (
         <View style={styles.connectionStatus}>
-          <Ionicons name="cloud-offline-outline" size={16} color={COLORS.status.warning} />
+          <CloudOff size={16} color={COLORS.status.warning} />
           <Text style={styles.connectionText}>Offline - Pull to refresh</Text>
         </View>
       )}
