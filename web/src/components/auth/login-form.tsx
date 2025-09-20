@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/auth-context';
-import { useToast } from '@/hooks/use-toast';
+import { useNotification } from '@/contexts/notification-context';
 import { cn } from '@/lib/utils';
 
 const loginSchema = z.object({
@@ -26,7 +26,7 @@ export interface LoginFormProps {
 
 export function LoginForm({ className, onSuccess }: LoginFormProps): React.ReactElement {
   const { login, isLoading, clearError } = useAuth();
-  const { toast } = useToast();
+  const { addNotification } = useNotification();
   const [showPassword, setShowPassword] = React.useState(false);
 
   const {
@@ -46,10 +46,12 @@ export function LoginForm({ className, onSuccess }: LoginFormProps): React.React
     try {
       await login(data);
       
-      toast.success(
-        "Welcome back!",
-        "You've been signed in successfully."
-      );
+      addNotification({
+        type: 'success',
+        title: 'Welcome back!',
+        message: 'You have been signed in successfully.',
+        duration: 3000,
+      });
       
       onSuccess?.();
     } catch (error: any) {
@@ -62,10 +64,12 @@ export function LoginForm({ className, onSuccess }: LoginFormProps): React.React
                                  .replace(/^(Authentication [Ee]rror:?\s*)/i, '')
                                  .replace(/^([Ee]rror:?\s*)/i, '');
       
-      toast.error(
-        "Sign In Failed",
-        errorMessage
-      );
+      addNotification({
+        type: 'error',
+        title: 'Sign In Failed',
+        message: errorMessage,
+        duration: 4000,
+      });
     }
   };
 

@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/auth-context';
-import { useToast } from '@/hooks/use-toast';
+import { useNotification } from '@/contexts/notification-context';
 import { cn } from '@/lib/utils';
 
 const NIGERIAN_STATES = [
@@ -50,18 +50,57 @@ export interface SignupFormProps {
 
 export function SignupForm({ className, onSuccess }: SignupFormProps): React.ReactElement {
   const { signup, isLoading, clearError } = useAuth();
-  const { toast } = useToast();
+  const { addNotification } = useNotification();
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const [passwordValue, setPasswordValue] = React.useState('');
+  const [phoneValue, setPhoneValue] = React.useState('');
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     setError,
+    watch,
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
   });
+
+  // Watch password and phone for real-time validation
+  const watchedPassword = watch('password', '');
+  const watchedPhone = watch('phoneNumber', '');
+
+  React.useEffect(() => {
+    setPasswordValue(watchedPassword || '');
+  }, [watchedPassword]);
+
+  React.useEffect(() => {
+    setPhoneValue(watchedPhone || '');
+  }, [watchedPhone]);
+
+  // Password validation helpers
+  const getPasswordValidation = (password: string) => {
+    return {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /\d/.test(password),
+      special: /[@$!%*?&]/.test(password),
+    };
+  };
+
+  // Phone validation helper
+  const getPhoneValidation = (phone: string) => {
+    const cleanPhone = phone.replace(/\s+/g, '');
+    return {
+      format: /^\+234[789][01]\d{8}$/.test(cleanPhone),
+      hasPrefix: cleanPhone.startsWith('+234'),
+      validLength: cleanPhone.length === 14,
+    };
+  };
+
+  const passwordValidation = getPasswordValidation(passwordValue);
+  const phoneValidation = getPhoneValidation(phoneValue);
 
   // Clear auth error when component mounts
   React.useEffect(() => {
@@ -78,10 +117,12 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
       };
       await signup(signupData);
       
-      toast.success(
-        "Account Created!",
-        "Welcome to TradeByBarter! Your account has been created successfully."
-      );
+      addNotification({
+        type: 'success',
+        title: 'Account Created!',
+        message: 'Welcome to TradeByBarter! Your account has been created successfully.',
+        duration: 4000,
+      });
       
       onSuccess?.();
     } catch (error: any) {
@@ -98,15 +139,19 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
         setError('email', {
           message: 'An account with this email already exists',
         });
-        toast.error(
-          "Email Already Exists",
-          "An account with this email already exists. Please use a different email or sign in."
-        );
+        addNotification({
+          type: 'error',
+          title: 'Email Already Exists',
+          message: 'An account with this email already exists. Please use a different email or sign in.',
+          duration: 4000,
+        });
       } else {
-        toast.error(
-          "Account Creation Failed",
-          errorMessage
-        );
+        addNotification({
+          type: 'error',
+          title: 'Account Creation Failed',
+          message: errorMessage,
+          duration: 4000,
+        });
       }
     }
   };
@@ -166,7 +211,44 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
             {...(errors.phoneNumber?.message && { error: errors.phoneNumber.message })}
             {...register('phoneNumber')}
           />
-          <p className="text-xs text-neutral-gray mt-1">Enter your Nigerian phone number</p>
+          <div className="mt-2 space-y-1">
+            <div className="flex items-center gap-2">
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                phoneValidation.hasPrefix ? "bg-green-500" : "bg-gray-300"
+              )} />
+              <span className={cn(
+                "text-xs",
+                phoneValidation.hasPrefix ? "text-green-600" : "text-gray-500"
+              )}>
+                Starts with +234
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                phoneValidation.validLength ? "bg-green-500" : "bg-gray-300"
+              )} />
+              <span className={cn(
+                "text-xs",
+                phoneValidation.validLength ? "text-green-600" : "text-gray-500"
+              )}>
+                Correct length (14 digits total)
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                phoneValidation.format ? "bg-green-500" : "bg-gray-300"
+              )} />
+              <span className={cn(
+                "text-xs",
+                phoneValidation.format ? "text-green-600" : "text-gray-500"
+              )}>
+                Valid Nigerian mobile number
+              </span>
+            </div>
+          </div>
         </div>
 
         <div>
@@ -233,9 +315,68 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
               )}
             </button>
           </div>
-          <p className="text-xs text-neutral-gray mt-1">
-            Must be at least 8 characters with uppercase, lowercase, number, and special character
-          </p>
+          <div className="mt-2 space-y-1">
+            <div className="flex items-center gap-2">
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                passwordValidation.length ? "bg-green-500" : "bg-gray-300"
+              )} />
+              <span className={cn(
+                "text-xs",
+                passwordValidation.length ? "text-green-600" : "text-gray-500"
+              )}>
+                At least 8 characters
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                passwordValidation.uppercase ? "bg-green-500" : "bg-gray-300"
+              )} />
+              <span className={cn(
+                "text-xs",
+                passwordValidation.uppercase ? "text-green-600" : "text-gray-500"
+              )}>
+                One uppercase letter
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                passwordValidation.lowercase ? "bg-green-500" : "bg-gray-300"
+              )} />
+              <span className={cn(
+                "text-xs",
+                passwordValidation.lowercase ? "text-green-600" : "text-gray-500"
+              )}>
+                One lowercase letter
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                passwordValidation.number ? "bg-green-500" : "bg-gray-300"
+              )} />
+              <span className={cn(
+                "text-xs",
+                passwordValidation.number ? "text-green-600" : "text-gray-500"
+              )}>
+                One number
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                passwordValidation.special ? "bg-green-500" : "bg-gray-300"
+              )} />
+              <span className={cn(
+                "text-xs",
+                passwordValidation.special ? "text-green-600" : "text-gray-500"
+              )}>
+                One special character (@$!%*?&)
+              </span>
+            </div>
+          </div>
         </div>
 
         <div>

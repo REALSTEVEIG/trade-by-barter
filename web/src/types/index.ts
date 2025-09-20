@@ -26,7 +26,9 @@ export interface Listing {
   priceInKobo?: number; // Price in kobo (for cash/hybrid trades)
   desiredItems?: string[];
   images: MediaFile[];
-  location: Location;
+  city: string;
+  state: string;
+  specificLocation?: string;
   status: 'active' | 'paused' | 'completed' | 'cancelled';
   userId: string;
   user?: User;

@@ -18,22 +18,18 @@ const categories = [
   { name: 'All Categories', slug: 'all' },
   { name: 'Electronics', slug: 'ELECTRONICS' },
   { name: 'Fashion', slug: 'FASHION' },
-  { name: 'Vehicles', slug: 'VEHICLES' },
-  { name: 'Home & Garden', slug: 'HOME_GARDEN' },
-  { name: 'Books & Education', slug: 'BOOKS_EDUCATION' },
-  { name: 'Health & Beauty', slug: 'HEALTH_BEAUTY' },
-  { name: 'Sports & Recreation', slug: 'SPORTS_RECREATION' },
-  { name: 'Baby & Kids', slug: 'BABY_KIDS' },
-  { name: 'Agriculture', slug: 'AGRICULTURE' },
+  { name: 'Home & Garden', slug: 'HOME_APPLIANCES' },
+  { name: 'Books & Media', slug: 'BOOKS' },
+  { name: 'Sports & Recreation', slug: 'SPORTS' },
+  { name: 'Automotive', slug: 'AUTOMOTIVE' },
+  { name: 'Beauty & Health', slug: 'BEAUTY' },
+  { name: 'Toys & Games', slug: 'TOYS' },
+  { name: 'Jewelry & Accessories', slug: 'JEWELRY' },
+  { name: 'Arts & Crafts', slug: 'ARTS_CRAFTS' },
+  { name: 'Musical Instruments', slug: 'MUSIC' },
+  { name: 'Food & Beverages', slug: 'FOOD_BEVERAGES' },
+  { name: 'Tools & Equipment', slug: 'TOOLS' },
   { name: 'Services', slug: 'SERVICES' },
-  { name: 'Arts & Crafts', slug: 'ART_CRAFTS' },
-  { name: 'Musical Instruments', slug: 'MUSICAL_INSTRUMENTS' },
-  { name: 'Furniture', slug: 'FURNITURE' },
-  { name: 'Appliances', slug: 'APPLIANCES' },
-  { name: 'Books', slug: 'BOOKS' },
-  { name: 'Sports', slug: 'SPORTS' },
-  { name: 'Toys', slug: 'TOYS' },
-  { name: 'Beauty', slug: 'BEAUTY' },
   { name: 'Other', slug: 'OTHER' },
 ];
 
@@ -58,6 +54,7 @@ export default function FeedPage(): React.ReactElement {
   const [selectedLocation, setSelectedLocation] = React.useState('');
   const [sortBy, setSortBy] = React.useState('newest');
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [showMyListings, setShowMyListings] = React.useState(false);
 
   // Pagination
   const [page, setPage] = React.useState(1);
@@ -82,6 +79,7 @@ export default function FeedPage(): React.ReactElement {
         ...(selectedCategory !== 'all' && { category: selectedCategory }),
         ...(selectedLocation && { location: selectedLocation }),
         ...(searchQuery && { query: searchQuery }),
+        ...(showMyListings && user && { userId: user.id }),
         sortBy: sortBy,
       };
 
@@ -107,12 +105,12 @@ export default function FeedPage(): React.ReactElement {
     } finally {
       setLoading(false);
     }
-  }, [page, selectedCategory, selectedLocation, searchQuery, sortBy]);
+  }, [page, selectedCategory, selectedLocation, searchQuery, sortBy, showMyListings]);
 
   // Initial load
   React.useEffect(() => {
     fetchListings(true);
-  }, [selectedCategory, selectedLocation, searchQuery, sortBy]);
+  }, [selectedCategory, selectedLocation, searchQuery, sortBy, showMyListings]);
 
   const handleSearch = (query: string): void => {
     setSearchQuery(query);
@@ -167,11 +165,16 @@ export default function FeedPage(): React.ReactElement {
       <Header user={headerUser} onSearch={handleSearch} />
 
       <div className="container mx-auto px-4 py-8">
-        {/* Post Item Button */}
+        {/* Header with Post Item Button */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="heading-1 mb-2">Marketplace</h1>
-            <p className="subtext">Discover amazing items to trade across Nigeria</p>
+            <h1 className="heading-1 mb-2">{showMyListings ? 'My Listings' : 'Marketplace'}</h1>
+            <p className="subtext">
+              {showMyListings
+                ? 'Manage your posted items and track their performance'
+                : 'Discover amazing items to trade across Nigeria'
+              }
+            </p>
           </div>
           {user && (
             <Link href="/listings/create">
@@ -200,6 +203,17 @@ export default function FeedPage(): React.ReactElement {
           {/* Filters and View Toggle */}
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
+              {user && (
+                <Button
+                  variant={showMyListings ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowMyListings(!showMyListings)}
+                  className="flex items-center gap-2"
+                >
+                  {showMyListings ? 'Show All' : 'My Listings'}
+                </Button>
+              )}
+              
               <Button
                 variant="outline"
                 size="sm"
@@ -300,7 +314,7 @@ export default function FeedPage(): React.ReactElement {
                   id={listing.id}
                   title={listing.title}
                   price={listing.priceInKobo || 0}
-                  location={`${listing.location.city}, ${listing.location.state}`}
+                  location={`${listing.city}, ${listing.state}`}
                   imageUrl={listing.images[0]?.url || '/api/placeholder/300/200'}
                   imageAlt={listing.title}
                   isFavorite={Boolean(listing.isFavorite)}
@@ -340,6 +354,7 @@ export default function FeedPage(): React.ReactElement {
                 setSelectedCategory('all');
                 setSelectedLocation('');
                 setSearchQuery('');
+                setShowMyListings(false);
               }}>
                 Clear Filters
               </Button>
