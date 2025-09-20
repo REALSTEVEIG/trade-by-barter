@@ -53,11 +53,12 @@ export class CreateListingDto {
   @IsOptional()
   @IsNumber({}, { message: 'Price must be a valid number' })
   @Min(0, { message: 'Price must be a positive number' })
-  @Max(100000000, { message: 'Price cannot exceed 1,000,000 Naira' }) // 100M kobo = 1M Naira
   @Transform(({ value }) => {
     if (value === '' || value === null || value === undefined) return undefined;
-    const parsed = parseInt(value);
-    return isNaN(parsed) ? undefined : parsed;
+    const parsed = parseFloat(value);
+    if (isNaN(parsed)) return undefined;
+    // Convert Naira to kobo (multiply by 100)
+    return Math.round(parsed * 100);
   })
   priceInKobo?: number;
 

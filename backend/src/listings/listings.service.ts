@@ -103,18 +103,35 @@ export class ListingsService {
   }
 
   async createListing(userId: string, createListingDto: CreateListingDto): Promise<ListingResponse> {
-    // Validate trade type logic
-    if (!createListingDto.acceptsCash && !createListingDto.acceptsSwap) {
-      throw new BadRequestException('Listing must accept either cash or swap');
-    }
-
-    // Handle price logic based on trade type
+    // Normalize trade type logic based on frontend selections
+    let isSwapOnly = false;
+    let acceptsCash = false;
+    let acceptsSwap = false;
     let finalPrice: number | undefined = createListingDto.priceInKobo;
-    
+
+    // Determine trade type from the boolean flags
     if (createListingDto.isSwapOnly) {
-      finalPrice = undefined; // Force null for swap-only listings
-    } else if (createListingDto.acceptsCash && !finalPrice) {
-      throw new BadRequestException('Cash listings must have a price');
+      // Swap only - no cash accepted
+      isSwapOnly = true;
+      acceptsCash = false;
+      acceptsSwap = true;
+      finalPrice = undefined; // No price for swap-only
+    } else if (createListingDto.acceptsCash && !createListingDto.acceptsSwap) {
+      // Cash only - no swap accepted
+      isSwapOnly = false;
+      acceptsCash = true;
+      acceptsSwap = false;
+      if (!finalPrice || finalPrice === 0) {
+        throw new BadRequestException('Cash-only listings must have a price');
+      }
+    } else if (createListingDto.acceptsCash && createListingDto.acceptsSwap) {
+      // Both cash and swap accepted
+      isSwapOnly = false;
+      acceptsCash = true;
+      acceptsSwap = true;
+      // Price is optional for hybrid listings
+    } else {
+      throw new BadRequestException('Listing must accept either cash, swap, or both');
     }
 
     const listing = await this.prisma.listing.create({
@@ -126,9 +143,9 @@ export class ListingsService {
         subcategory: createListingDto.subcategory,
         condition: createListingDto.condition as any,
         priceInKobo: finalPrice,
-        isSwapOnly: createListingDto.isSwapOnly || false,
-        acceptsCash: createListingDto.acceptsCash ?? true,
-        acceptsSwap: createListingDto.acceptsSwap ?? true,
+        isSwapOnly,
+        acceptsCash,
+        acceptsSwap,
         swapPreferences: createListingDto.swapPreferences || [],
         city: createListingDto.city,
         state: createListingDto.state,
@@ -148,18 +165,35 @@ export class ListingsService {
     createListingDto: CreateListingDto,
     files?: Express.Multer.File[]
   ): Promise<ListingResponse> {
-    // Validate trade type logic
-    if (!createListingDto.acceptsCash && !createListingDto.acceptsSwap) {
-      throw new BadRequestException('Listing must accept either cash or swap');
-    }
-
-    // Handle price logic based on trade type
+    // Normalize trade type logic based on frontend selections
+    let isSwapOnly = false;
+    let acceptsCash = false;
+    let acceptsSwap = false;
     let finalPrice: number | undefined = createListingDto.priceInKobo;
-    
+
+    // Determine trade type from the boolean flags
     if (createListingDto.isSwapOnly) {
-      finalPrice = undefined; // Force null for swap-only listings
-    } else if (createListingDto.acceptsCash && !finalPrice) {
-      throw new BadRequestException('Cash listings must have a price');
+      // Swap only - no cash accepted
+      isSwapOnly = true;
+      acceptsCash = false;
+      acceptsSwap = true;
+      finalPrice = undefined; // No price for swap-only
+    } else if (createListingDto.acceptsCash && !createListingDto.acceptsSwap) {
+      // Cash only - no swap accepted
+      isSwapOnly = false;
+      acceptsCash = true;
+      acceptsSwap = false;
+      if (!finalPrice || finalPrice === 0) {
+        throw new BadRequestException('Cash-only listings must have a price');
+      }
+    } else if (createListingDto.acceptsCash && createListingDto.acceptsSwap) {
+      // Both cash and swap accepted
+      isSwapOnly = false;
+      acceptsCash = true;
+      acceptsSwap = true;
+      // Price is optional for hybrid listings
+    } else {
+      throw new BadRequestException('Listing must accept either cash, swap, or both');
     }
 
     if (files && files.length > 6) {
@@ -208,9 +242,9 @@ export class ListingsService {
           subcategory: createListingDto.subcategory,
           condition: createListingDto.condition as any,
           priceInKobo: finalPrice,
-          isSwapOnly: createListingDto.isSwapOnly || false,
-          acceptsCash: createListingDto.acceptsCash ?? true,
-          acceptsSwap: createListingDto.acceptsSwap ?? true,
+          isSwapOnly,
+          acceptsCash,
+          acceptsSwap,
           swapPreferences: createListingDto.swapPreferences || [],
           city: createListingDto.city,
           state: createListingDto.state,

@@ -103,15 +103,31 @@ let ListingsService = class ListingsService {
         };
     }
     async createListing(userId, createListingDto) {
-        if (!createListingDto.acceptsCash && !createListingDto.acceptsSwap) {
-            throw new common_1.BadRequestException('Listing must accept either cash or swap');
-        }
+        let isSwapOnly = false;
+        let acceptsCash = false;
+        let acceptsSwap = false;
         let finalPrice = createListingDto.priceInKobo;
         if (createListingDto.isSwapOnly) {
+            isSwapOnly = true;
+            acceptsCash = false;
+            acceptsSwap = true;
             finalPrice = undefined;
         }
-        else if (createListingDto.acceptsCash && !finalPrice) {
-            throw new common_1.BadRequestException('Cash listings must have a price');
+        else if (createListingDto.acceptsCash && !createListingDto.acceptsSwap) {
+            isSwapOnly = false;
+            acceptsCash = true;
+            acceptsSwap = false;
+            if (!finalPrice || finalPrice === 0) {
+                throw new common_1.BadRequestException('Cash-only listings must have a price');
+            }
+        }
+        else if (createListingDto.acceptsCash && createListingDto.acceptsSwap) {
+            isSwapOnly = false;
+            acceptsCash = true;
+            acceptsSwap = true;
+        }
+        else {
+            throw new common_1.BadRequestException('Listing must accept either cash, swap, or both');
         }
         const listing = await this.prisma.listing.create({
             data: {
@@ -122,9 +138,9 @@ let ListingsService = class ListingsService {
                 subcategory: createListingDto.subcategory,
                 condition: createListingDto.condition,
                 priceInKobo: finalPrice,
-                isSwapOnly: createListingDto.isSwapOnly || false,
-                acceptsCash: createListingDto.acceptsCash ?? true,
-                acceptsSwap: createListingDto.acceptsSwap ?? true,
+                isSwapOnly,
+                acceptsCash,
+                acceptsSwap,
                 swapPreferences: createListingDto.swapPreferences || [],
                 city: createListingDto.city,
                 state: createListingDto.state,
@@ -138,15 +154,31 @@ let ListingsService = class ListingsService {
         return this.formatListingResponse(listing, userId);
     }
     async createListingWithImages(userId, createListingDto, files) {
-        if (!createListingDto.acceptsCash && !createListingDto.acceptsSwap) {
-            throw new common_1.BadRequestException('Listing must accept either cash or swap');
-        }
+        let isSwapOnly = false;
+        let acceptsCash = false;
+        let acceptsSwap = false;
         let finalPrice = createListingDto.priceInKobo;
         if (createListingDto.isSwapOnly) {
+            isSwapOnly = true;
+            acceptsCash = false;
+            acceptsSwap = true;
             finalPrice = undefined;
         }
-        else if (createListingDto.acceptsCash && !finalPrice) {
-            throw new common_1.BadRequestException('Cash listings must have a price');
+        else if (createListingDto.acceptsCash && !createListingDto.acceptsSwap) {
+            isSwapOnly = false;
+            acceptsCash = true;
+            acceptsSwap = false;
+            if (!finalPrice || finalPrice === 0) {
+                throw new common_1.BadRequestException('Cash-only listings must have a price');
+            }
+        }
+        else if (createListingDto.acceptsCash && createListingDto.acceptsSwap) {
+            isSwapOnly = false;
+            acceptsCash = true;
+            acceptsSwap = true;
+        }
+        else {
+            throw new common_1.BadRequestException('Listing must accept either cash, swap, or both');
         }
         if (files && files.length > 6) {
             throw new common_1.BadRequestException('Maximum 6 images allowed per listing');
@@ -183,9 +215,9 @@ let ListingsService = class ListingsService {
                     subcategory: createListingDto.subcategory,
                     condition: createListingDto.condition,
                     priceInKobo: finalPrice,
-                    isSwapOnly: createListingDto.isSwapOnly || false,
-                    acceptsCash: createListingDto.acceptsCash ?? true,
-                    acceptsSwap: createListingDto.acceptsSwap ?? true,
+                    isSwapOnly,
+                    acceptsCash,
+                    acceptsSwap,
                     swapPreferences: createListingDto.swapPreferences || [],
                     city: createListingDto.city,
                     state: createListingDto.state,
