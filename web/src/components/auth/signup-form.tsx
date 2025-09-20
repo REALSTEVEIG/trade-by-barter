@@ -55,6 +55,7 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
   const [passwordValue, setPasswordValue] = React.useState('');
   const [phoneValue, setPhoneValue] = React.useState('');
+  const [confirmPasswordValue, setConfirmPasswordValue] = React.useState('');
 
   const {
     register,
@@ -66,13 +67,18 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
     resolver: zodResolver(signupSchema),
   });
 
-  // Watch password and phone for real-time validation
+  // Watch password, confirmPassword and phone for real-time validation
   const watchedPassword = watch('password', '');
+  const watchedConfirmPassword = watch('confirmPassword', '');
   const watchedPhone = watch('phoneNumber', '');
 
   React.useEffect(() => {
     setPasswordValue(watchedPassword || '');
   }, [watchedPassword]);
+
+  React.useEffect(() => {
+    setConfirmPasswordValue(watchedConfirmPassword || '');
+  }, [watchedConfirmPassword]);
 
   React.useEffect(() => {
     setPhoneValue(watchedPhone || '');
@@ -101,6 +107,12 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
 
   const passwordValidation = getPasswordValidation(passwordValue);
   const phoneValidation = getPhoneValidation(phoneValue);
+  
+  // Confirm password validation
+  const confirmPasswordValidation = {
+    matches: confirmPasswordValue.length > 0 && passwordValue === confirmPasswordValue,
+    hasValue: confirmPasswordValue.length > 0,
+  };
 
   // Clear auth error when component mounts
   React.useEffect(() => {
@@ -136,15 +148,35 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
                                  .replace(/^([Ee]rror:?\s*)/i, '');
       
       if (error.response?.status === 409) {
-        setError('email', {
-          message: 'An account with this email already exists',
-        });
-        addNotification({
-          type: 'error',
-          title: 'Email Already Exists',
-          message: 'An account with this email already exists. Please use a different email or sign in.',
-          duration: 4000,
-        });
+        // Check if it's an email or phone number conflict
+        if (errorMessage.toLowerCase().includes('email')) {
+          setError('email', {
+            message: 'An account with this email already exists',
+          });
+          addNotification({
+            type: 'error',
+            title: 'Email Already Exists',
+            message: 'An account with this email already exists. Please use a different email or sign in.',
+            duration: 4000,
+          });
+        } else if (errorMessage.toLowerCase().includes('phone')) {
+          setError('phoneNumber', {
+            message: 'An account with this phone number already exists',
+          });
+          addNotification({
+            type: 'error',
+            title: 'Phone Number Already Exists',
+            message: 'An account with this phone number already exists. Please use a different phone number or sign in.',
+            duration: 4000,
+          });
+        } else {
+          addNotification({
+            type: 'error',
+            title: 'Account Already Exists',
+            message: errorMessage,
+            duration: 4000,
+          });
+        }
       } else {
         addNotification({
           type: 'error',
@@ -400,6 +432,22 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
               )}
             </button>
           </div>
+          {confirmPasswordValue.length > 0 && (
+            <div className="mt-2">
+              <div className="flex items-center gap-2">
+                <div className={cn(
+                  "w-2 h-2 rounded-full",
+                  confirmPasswordValidation.matches ? "bg-green-500" : "bg-red-500"
+                )} />
+                <span className={cn(
+                  "text-xs",
+                  confirmPasswordValidation.matches ? "text-green-600" : "text-red-600"
+                )}>
+                  {confirmPasswordValidation.matches ? "Passwords match" : "Passwords do not match"}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div>
