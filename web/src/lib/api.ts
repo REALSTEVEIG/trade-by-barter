@@ -234,23 +234,23 @@ export const offersApi = {
 // Chat API
 export const chatApi = {
   getChats: async () => {
-    return apiClient.getPaginated('/chat');
+    return apiClient.getPaginated('/chats');
   },
 
   getChat: async (id: string) => {
-    return apiClient.get(`/chat/${id}`);
+    return apiClient.get(`/chats/${id}`);
   },
 
   getMessages: async (chatId: string, params?: Record<string, any>) => {
-    return apiClient.getPaginated(`/chat/${chatId}/messages`, params);
+    return apiClient.getPaginated(`/chats/${chatId}/messages`, params);
   },
 
-  sendMessage: async (data: any) => {
-    return apiClient.post('/chat/messages', data);
+  sendMessage: async (data: { chatId: string; content: string; type: string }) => {
+    return apiClient.post(`/chats/${data.chatId}/messages`, data);
   },
 
   markAsRead: async (chatId: string) => {
-    return apiClient.patch(`/chat/${chatId}/read`);
+    return apiClient.put(`/chats/${chatId}/read`);
   },
 };
 

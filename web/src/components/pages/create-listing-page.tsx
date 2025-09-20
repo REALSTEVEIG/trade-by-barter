@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { listingsApi } from '@/lib/api';
 import { CATEGORIES, PRODUCT_CONDITIONS, NIGERIAN_STATES } from '@/lib/utils';
 import { useAuth, withAuth } from '@/contexts/auth-context';
+import { useToast } from '@/hooks/use-toast';
 
 interface CreateListingFormData {
   title: string;
@@ -36,6 +37,7 @@ const TRADE_OPTIONS = [
 function CreateListingPageComponent(): React.ReactElement {
   const { user: _user } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<CreateListingFormData>({
     title: '',
@@ -52,7 +54,6 @@ function CreateListingPageComponent(): React.ReactElement {
     swapPreferences: '',
     images: []
   });
-  const [error, setError] = useState<string | null>(null);
 
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
 
@@ -122,10 +123,42 @@ function CreateListingPageComponent(): React.ReactElement {
     }
   };
 
+  const validateForm = (): boolean => {
+    if (!formData.title.trim()) {
+      toast.error('Required Field', 'Title is required');
+      return false;
+    }
+    if (!formData.category) {
+      toast.error('Required Field', 'Category is required');
+      return false;
+    }
+    if (!formData.condition) {
+      toast.error('Required Field', 'Condition is required');
+      return false;
+    }
+    if (!formData.state) {
+      toast.error('Required Field', 'State is required');
+      return false;
+    }
+    if (!formData.city.trim()) {
+      toast.error('Required Field', 'City is required');
+      return false;
+    }
+    if (formData.images.length === 0) {
+      toast.error('Required Field', 'At least one photo is required');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setIsLoading(true);
-    setError(null);
 
     try {
       // Create FormData for the listing
@@ -152,10 +185,30 @@ function CreateListingPageComponent(): React.ReactElement {
       });
 
       await listingsApi.createListing(formDataToSend);
+      
+      toast.success(
+        'Success',
+        'Your item has been posted successfully and is now live!'
+      );
+      
       router.push('/feed');
     } catch (error: any) {
       console.error('Error creating listing:', error);
-      setError(error.response?.data?.message || 'Failed to create listing');
+      let errorMessage = error.response?.data?.message ||
+                        error.response?.data?.originalError ||
+                        'Failed to create listing';
+      
+      // Clean up error message to remove redundant prefixes
+      errorMessage = errorMessage.replace(/^(Validation [Ee]rror:?\s*)/i, '')
+                                 .replace(/^(Internal [Ss]erver [Ee]rror:?\s*)/i, '')
+                                 .replace(/^([Ee]rror:?\s*)/i, '')
+                                 .replace(/^(Failed to upload file to S3:\s*)/i, '');
+      
+      
+      toast.error(
+        'Failed to Post Item',
+        errorMessage
+      );
     } finally {
       setIsLoading(false);
     }
@@ -298,9 +351,9 @@ function CreateListingPageComponent(): React.ReactElement {
                   Value (₦)
                 </label>
                 <Input
-                  value={formData.priceInKobo / 100}
-                  onChange={(e) => handleInputChange('priceInKobo', parseFloat(e.target.value || '0') * 100)}
-                  placeholder="0"
+                  value={formData.priceInKobo > 0 ? (formData.priceInKobo / 100).toString() : ''}
+                  onChange={(e) => handleInputChange('priceInKobo', e.target.value ? parseFloat(e.target.value) * 100 : 0)}
+                  placeholder="Enter estimated value"
                   type="number"
                   step="0.01"
                 />
@@ -404,15 +457,9 @@ function CreateListingPageComponent(): React.ReactElement {
         </Card>
 
         {/* Submit Button */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-600">{error}</p>
-          </div>
-        )}
-
         <Button
           type="submit"
-          disabled={isLoading || !formData.title || !formData.category || !formData.condition || !formData.state || !formData.city}
+          disabled={isLoading}
           className="w-full py-3 text-lg font-medium"
         >
           {isLoading ? 'Posting...' : 'Post Item'}

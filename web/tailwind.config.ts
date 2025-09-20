@@ -139,6 +139,7 @@ const config: Config = {
         'bounce-in': 'bounce-in 0.6s ease-out',
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'spin-slow': 'spin 3s linear infinite',
+        'shrink': 'shrink var(--duration) linear forwards',
       },
       keyframes: {
         'accordion-down': {
@@ -170,6 +171,10 @@ const config: Config = {
           '50%': { transform: 'scale(1.05)' },
           '70%': { transform: 'scale(0.9)' },
           '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        'shrink': {
+          '0%': { width: '100%' },
+          '100%': { width: '0%' },
         },
       },
       boxShadow: {

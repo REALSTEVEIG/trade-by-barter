@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 const loginSchema = z.object({
@@ -24,14 +25,14 @@ export interface LoginFormProps {
 }
 
 export function LoginForm({ className, onSuccess }: LoginFormProps): React.ReactElement {
-  const { login, isLoading, error, clearError } = useAuth();
+  const { login, isLoading, clearError } = useAuth();
+  const { toast } = useToast();
   const [showPassword, setShowPassword] = React.useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    setError,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
@@ -44,14 +45,27 @@ export function LoginForm({ className, onSuccess }: LoginFormProps): React.React
   const onSubmit = async (data: LoginFormData): Promise<void> => {
     try {
       await login(data);
+      
+      toast.success(
+        "Welcome back!",
+        "You've been signed in successfully."
+      );
+      
       onSuccess?.();
     } catch (error: any) {
-      // Error is handled by the auth context
-      if (error.response?.status === 401) {
-        setError('root', {
-          message: 'Invalid email or password. Please try again.',
-        });
-      }
+      let errorMessage = error.response?.data?.message ||
+                        error.response?.data?.error ||
+                        'Invalid email or password. Please try again.';
+      
+      // Clean up error message to remove redundant prefixes
+      errorMessage = errorMessage.replace(/^(Validation [Ee]rror:?\s*)/i, '')
+                                 .replace(/^(Authentication [Ee]rror:?\s*)/i, '')
+                                 .replace(/^([Ee]rror:?\s*)/i, '');
+      
+      toast.error(
+        "Sign In Failed",
+        errorMessage
+      );
     }
   };
 
@@ -67,12 +81,6 @@ export function LoginForm({ className, onSuccess }: LoginFormProps): React.React
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {(error || errors.root) && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-600 text-sm">
-            {error || errors.root?.message}
-          </div>
-        )}
-
         <div>
           <Input
             label="Email Address"

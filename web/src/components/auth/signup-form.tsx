@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 const NIGERIAN_STATES = [
@@ -48,7 +49,8 @@ export interface SignupFormProps {
 }
 
 export function SignupForm({ className, onSuccess }: SignupFormProps): React.ReactElement {
-  const { signup, isLoading, error, clearError } = useAuth();
+  const { signup, isLoading, clearError } = useAuth();
+  const { toast } = useToast();
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
@@ -75,13 +77,36 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
         ...(address && address.trim() && { address: address.trim() }),
       };
       await signup(signupData);
+      
+      toast.success(
+        "Account Created!",
+        "Welcome to TradeByBarter! Your account has been created successfully."
+      );
+      
       onSuccess?.();
     } catch (error: any) {
-      // Error is handled by the auth context
+      let errorMessage = error.response?.data?.message ||
+                        error.response?.data?.error ||
+                        'Failed to create account. Please try again.';
+      
+      // Clean up error message to remove redundant prefixes
+      errorMessage = errorMessage.replace(/^(Validation [Ee]rror:?\s*)/i, '')
+                                 .replace(/^(Authentication [Ee]rror:?\s*)/i, '')
+                                 .replace(/^([Ee]rror:?\s*)/i, '');
+      
       if (error.response?.status === 409) {
         setError('email', {
           message: 'An account with this email already exists',
         });
+        toast.error(
+          "Email Already Exists",
+          "An account with this email already exists. Please use a different email or sign in."
+        );
+      } else {
+        toast.error(
+          "Account Creation Failed",
+          errorMessage
+        );
       }
     }
   };
@@ -102,12 +127,6 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-600 text-sm">
-            {error}
-          </div>
-        )}
-
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Input
