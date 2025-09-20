@@ -151,6 +151,28 @@ let ListingsService = class ListingsService {
         if (files && files.length > 6) {
             throw new common_1.BadRequestException('Maximum 6 images allowed per listing');
         }
+        const mediaRecords = [];
+        if (files && files.length > 0) {
+            for (const file of files) {
+                if (file.size > 5 * 1024 * 1024) {
+                    throw new common_1.BadRequestException('File size cannot exceed 5MB');
+                }
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                if (!allowedTypes.includes(file.mimetype)) {
+                    throw new common_1.BadRequestException('Only JPEG, PNG, and WebP images are allowed');
+                }
+                const s3Result = await this.awsS3Service.uploadFile(file, 'listings');
+                mediaRecords.push({
+                    filename: s3Result.filename,
+                    originalName: file.originalname,
+                    mimeType: file.mimetype,
+                    size: file.size,
+                    url: s3Result.url,
+                    storageKey: s3Result.key,
+                    userId: userId,
+                });
+            }
+        }
         const result = await this.prisma.$transaction(async (prisma) => {
             const listing = await prisma.listing.create({
                 data: {
@@ -171,38 +193,21 @@ let ListingsService = class ListingsService {
                     status: 'ACTIVE',
                 },
             });
-            if (files && files.length > 0) {
-                const mediaRecords = [];
-                for (const file of files) {
-                    if (file.size > 5 * 1024 * 1024) {
-                        throw new common_1.BadRequestException('File size cannot exceed 5MB');
-                    }
-                    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-                    if (!allowedTypes.includes(file.mimetype)) {
-                        throw new common_1.BadRequestException('Only JPEG, PNG, and WebP images are allowed');
-                    }
-                    const s3Result = await this.awsS3Service.uploadFile(file, 'listings');
-                    mediaRecords.push({
-                        filename: s3Result.filename,
-                        originalName: file.originalname,
-                        mimeType: file.mimetype,
-                        size: file.size,
-                        url: s3Result.url,
-                        storageKey: s3Result.key,
-                        listingId: listing.id,
-                        userId: userId,
-                    });
-                }
-                if (mediaRecords.length > 0) {
-                    await prisma.media.createMany({
-                        data: mediaRecords,
-                    });
-                }
+            if (mediaRecords.length > 0) {
+                const mediaData = mediaRecords.map(record => ({
+                    ...record,
+                    listingId: listing.id,
+                }));
+                await prisma.media.createMany({
+                    data: mediaData,
+                });
             }
             return prisma.listing.findUnique({
                 where: { id: listing.id },
                 include: { media: true },
             });
+        }, {
+            timeout: 10000,
         });
         if (!result) {
             throw new common_1.BadRequestException('Failed to create listing');

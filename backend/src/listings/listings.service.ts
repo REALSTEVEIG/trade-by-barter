@@ -166,6 +166,37 @@ export class ListingsService {
       throw new BadRequestException('Maximum 6 images allowed per listing');
     }
 
+    const mediaRecords: any[] = [];
+    
+    if (files && files.length > 0) {
+      // Process each file
+      for (const file of files) {
+        // Validate file
+        if (file.size > 5 * 1024 * 1024) {
+          throw new BadRequestException('File size cannot exceed 5MB');
+        }
+
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.mimetype)) {
+          throw new BadRequestException('Only JPEG, PNG, and WebP images are allowed');
+        }
+
+        // Upload to S3
+        const s3Result = await this.awsS3Service.uploadFile(file, 'listings');
+
+        mediaRecords.push({
+          filename: s3Result.filename,
+          originalName: file.originalname,
+          mimeType: file.mimetype,
+          size: file.size,
+          url: s3Result.url,
+          storageKey: s3Result.key,
+          userId: userId,
+        });
+      }
+    }
+
+    // Now create listing and media records in a fast transaction
     const result = await this.prisma.$transaction(async (prisma) => {
       // Create the listing
       const listing = await prisma.listing.create({
@@ -188,43 +219,16 @@ export class ListingsService {
         },
       });
 
-      // Handle image uploads if files are provided
-      if (files && files.length > 0) {
-        const mediaRecords: any[] = [];
+      // Add listingId to media records and save them
+      if (mediaRecords.length > 0) {
+        const mediaData = mediaRecords.map(record => ({
+          ...record,
+          listingId: listing.id,
+        }));
 
-        // Process each file
-        for (const file of files) {
-          // Validate file
-          if (file.size > 5 * 1024 * 1024) {
-            throw new BadRequestException('File size cannot exceed 5MB');
-          }
-
-          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-          if (!allowedTypes.includes(file.mimetype)) {
-            throw new BadRequestException('Only JPEG, PNG, and WebP images are allowed');
-          }
-
-          // Upload to S3
-          const s3Result = await this.awsS3Service.uploadFile(file, 'listings');
-
-          mediaRecords.push({
-            filename: s3Result.filename,
-            originalName: file.originalname,
-            mimeType: file.mimetype,
-            size: file.size,
-            url: s3Result.url,
-            storageKey: s3Result.key,
-            listingId: listing.id,
-            userId: userId,
-          });
-        }
-
-        // Save media records to database
-        if (mediaRecords.length > 0) {
-          await prisma.media.createMany({
-            data: mediaRecords,
-          });
-        }
+        await prisma.media.createMany({
+          data: mediaData,
+        });
       }
 
       // Return listing with media
@@ -232,6 +236,8 @@ export class ListingsService {
         where: { id: listing.id },
         include: { media: true },
       });
+    }, {
+      timeout: 10000, // 10 seconds timeout for the database transaction
     });
 
     if (!result) {
