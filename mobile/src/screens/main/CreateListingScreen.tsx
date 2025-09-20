@@ -23,19 +23,20 @@ import {
   ChevronDown
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
-import { 
-  COLORS, 
-  TYPOGRAPHY, 
-  SPACING, 
-  NIGERIAN_STATES, 
-  CATEGORIES, 
+import {
+  COLORS,
+  TYPOGRAPHY,
+  SPACING,
+  NIGERIAN_STATES,
+  CATEGORIES,
   PRODUCT_CONDITIONS,
   TRADE_OPTIONS,
   SUCCESS_MESSAGES,
-  ERROR_MESSAGES 
+  ERROR_MESSAGES
 } from '@/constants';
 import { listingsApi } from '@/lib/api';
 import Button from '@/components/ui/Button';
+import { useToast } from '@/contexts/toast-context';
 
 interface CreateListingFormData {
   title: string;
@@ -60,6 +61,7 @@ interface DropdownItem {
 
 const CreateListingScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showConditionModal, setShowConditionModal] = useState(false);
@@ -82,7 +84,12 @@ const CreateListingScreen: React.FC = () => {
 
   const handleImagePicker = async () => {
     if (formData.images.length >= 6) {
-      Alert.alert('Limit Reached', 'You can only add up to 6 photos');
+      showToast({
+        type: 'warning',
+        title: 'Limit Reached',
+        message: 'You can only add up to 6 photos',
+        duration: 3000,
+      });
       return;
     }
 
@@ -180,27 +187,57 @@ const CreateListingScreen: React.FC = () => {
 
   const validateForm = (): boolean => {
     if (!formData.title.trim()) {
-      Alert.alert('Validation Error', 'Title is required');
+      showToast({
+        type: 'error',
+        title: 'Required Field',
+        message: 'Title is required',
+        duration: 4000,
+      });
       return false;
     }
     if (!formData.category) {
-      Alert.alert('Validation Error', 'Category is required');
+      showToast({
+        type: 'error',
+        title: 'Required Field',
+        message: 'Category is required',
+        duration: 4000,
+      });
       return false;
     }
     if (!formData.condition) {
-      Alert.alert('Validation Error', 'Condition is required');
+      showToast({
+        type: 'error',
+        title: 'Required Field',
+        message: 'Condition is required',
+        duration: 4000,
+      });
       return false;
     }
     if (!formData.state) {
-      Alert.alert('Validation Error', 'State is required');
+      showToast({
+        type: 'error',
+        title: 'Required Field',
+        message: 'State is required',
+        duration: 4000,
+      });
       return false;
     }
     if (!formData.city.trim()) {
-      Alert.alert('Validation Error', 'City is required');
+      showToast({
+        type: 'error',
+        title: 'Required Field',
+        message: 'City is required',
+        duration: 4000,
+      });
       return false;
     }
     if (formData.images.length === 0) {
-      Alert.alert('Validation Error', 'At least one photo is required');
+      showToast({
+        type: 'error',
+        title: 'Required Field',
+        message: 'At least one photo is required',
+        duration: 4000,
+      });
       return false;
     }
     return true;
@@ -238,12 +275,43 @@ const CreateListingScreen: React.FC = () => {
       });
 
       await listingsApi.createListing(formDataToSend);
-      Alert.alert('Success', SUCCESS_MESSAGES.LISTING_CREATED, [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      
+      showToast({
+        type: 'success',
+        title: 'Success',
+        message: SUCCESS_MESSAGES.LISTING_CREATED,
+        duration: 4000,
+        action: {
+          label: 'View Listings',
+          onPress: () => navigation.goBack(),
+        },
+      });
+      
+      setTimeout(() => navigation.goBack(), 2000);
+      
     } catch (error: any) {
       console.error('Error creating listing:', error);
-      Alert.alert('Error', error.response?.data?.message || ERROR_MESSAGES.SERVER_ERROR);
+      
+      let errorMessage = error.response?.data?.message ||
+                        error.response?.data?.originalError ||
+                        ERROR_MESSAGES.SERVER_ERROR;
+      
+      // Clean up error message to remove redundant prefixes
+      errorMessage = errorMessage.replace(/^(Validation [Ee]rror:?\s*)/i, '')
+                                 .replace(/^(Internal [Ss]erver [Ee]rror:?\s*)/i, '')
+                                 .replace(/^([Ee]rror:?\s*)/i, '')
+                                 .replace(/^(Failed to upload file to S3:\s*)/i, '');
+      
+      showToast({
+        type: 'error',
+        title: 'Failed to Post Item',
+        message: errorMessage,
+        duration: 5000,
+        action: {
+          label: 'Try Again',
+          onPress: () => handleSubmit(),
+        },
+      });
     } finally {
       setIsLoading(false);
     }

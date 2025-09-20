@@ -6,15 +6,15 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/contexts/toast-context';
 import { AuthStackParamList } from '@/navigation';
-import { COLORS, TYPOGRAPHY, SUCCESS_MESSAGES, ERROR_MESSAGES } from '@/constants';
+import { COLORS, TYPOGRAPHY, ERROR_MESSAGES } from '@/constants';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Loading from '@/components/ui/Loading';
@@ -33,6 +33,7 @@ interface SignupForm {
 const SignupScreen: React.FC = () => {
   const navigation = useNavigation<SignupScreenNavigationProp>();
   const { signup, isLoading, error, clearError } = useAuth();
+  const { showToast } = useToast();
   
   const [form, setForm] = useState<SignupForm>({
     firstName: '',
@@ -103,10 +104,28 @@ const SignupScreen: React.FC = () => {
         displayName: `${form.firstName.trim()} ${form.lastName.trim()}`,
       });
       
-      Alert.alert('Success', SUCCESS_MESSAGES.SIGNUP);
+      showToast({
+        type: 'success',
+        title: 'Account Created!',
+        message: 'Welcome to TradeByBarter! Your account has been created successfully.',
+        duration: 4000,
+      });
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || ERROR_MESSAGES.SERVER;
-      Alert.alert('Signup Failed', errorMessage);
+      const errorMessage = error.response?.data?.message ||
+                          error.response?.data?.error ||
+                          ERROR_MESSAGES.SERVER;
+      
+      // Clean up error message to remove redundant prefixes
+      let cleanErrorMessage = errorMessage.replace(/^(Validation [Ee]rror:?\s*)/i, '')
+                                          .replace(/^(Authentication [Ee]rror:?\s*)/i, '')
+                                          .replace(/^([Ee]rror:?\s*)/i, '');
+      
+      showToast({
+        type: 'error',
+        title: 'Account Creation Failed',
+        message: cleanErrorMessage,
+        duration: 4000,
+      });
     }
   };
 
