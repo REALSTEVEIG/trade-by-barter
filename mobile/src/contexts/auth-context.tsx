@@ -77,11 +77,30 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
       const response = await authApi.login(credentials);
-      const { user, accessToken, refreshToken } = response.data as {
-        user: User;
-        accessToken: string;
-        refreshToken: string;
-      };
+      
+      // Defensive check for response structure
+      if (!response || !response.data) {
+        throw new Error('Invalid response from server');
+      }
+
+      console.log('Login response:', response);
+
+      // Handle different possible response structures
+      let user: User;
+      let accessToken: string;
+      let refreshToken: string;
+
+      // The API client wraps the response in { success: boolean, data: AuthResponse }
+      // The backend returns raw AuthResponse for successful requests
+      const authData = response.data as any;
+      
+      if (!authData || !authData.user || !authData.accessToken || !authData.refreshToken) {
+        throw new Error('Missing authentication data in response');
+      }
+
+      user = authData.user;
+      accessToken = authData.accessToken;
+      refreshToken = authData.refreshToken;
 
       // Store tokens and user data
       await AsyncStorage.multiSet([
@@ -123,11 +142,30 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
       const response = await authApi.signup(data);
-      const { user, accessToken, refreshToken } = response.data as {
-        user: User;
-        accessToken: string;
-        refreshToken: string;
-      };
+      
+      // Defensive check for response structure
+      if (!response || !response.data) {
+        throw new Error('Invalid response from server');
+      }
+
+      console.log('Signup response:', response);
+
+      // Handle different possible response structures
+      let user: User;
+      let accessToken: string;
+      let refreshToken: string;
+
+      // The API client wraps the response in { success: boolean, data: AuthResponse }
+      // The backend returns raw AuthResponse for successful requests
+      const authData = response.data as any;
+      
+      if (!authData || !authData.user || !authData.accessToken || !authData.refreshToken) {
+        throw new Error('Missing authentication data in response');
+      }
+
+      user = authData.user;
+      accessToken = authData.accessToken;
+      refreshToken = authData.refreshToken;
 
       // Store tokens and user data
       await AsyncStorage.multiSet([
@@ -144,6 +182,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
         error: null,
       }));
     } catch (error: any) {
+      console.error('Signup error:', error);
       const errorMessage = error.response?.data?.message || 'Signup failed. Please try again.';
       setState(prev => ({
         ...prev,
