@@ -25,7 +25,7 @@ interface PaginatedResponse<T = any> {
 // Create axios instance
 const api: AxiosInstance = axios.create({
   baseURL: API_CONFIG.BASE_URL,
-  timeout: API_CONFIG.TIMEOUT,
+  timeout: API_CONFIG.STANDARD_TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -123,6 +123,7 @@ export const apiClient = {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: API_CONFIG.UPLOAD_TIMEOUT, // Use longer timeout for file uploads
     });
     return response.data;
   },

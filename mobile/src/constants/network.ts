@@ -18,7 +18,7 @@ const getBaseURL = (): string => {
 // API Configuration
 export const API_CONFIG = {
   BASE_URL: getBaseURL(),
-  TIMEOUT: 10000,
+  TIMEOUT: 30000, // Increased to 30 seconds for file uploads
   RETRY_ATTEMPTS: 3,
   
   // WebSocket URL for real-time features
@@ -27,6 +27,10 @@ export const API_CONFIG = {
   // Upload limits
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
   MAX_FILES_PER_REQUEST: 5,
+  
+  // Specific timeouts for different operations
+  UPLOAD_TIMEOUT: 60000, // 60 seconds for file uploads
+  STANDARD_TIMEOUT: 15000, // 15 seconds for standard requests
 };
 
 // Environment detection

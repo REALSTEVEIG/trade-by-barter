@@ -9,9 +9,9 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Wallet, List } from 'lucide-react-native';
+import { Wallet, List, User, Grid } from 'lucide-react-native';
 import { listingsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 import { AppStackParamList } from '@/navigation';
@@ -36,6 +36,7 @@ const FeedScreen: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showMyListings, setShowMyListings] = useState(false);
 
   const fetchListings = useCallback(async (page = 1, refresh = false) => {
     try {
@@ -58,6 +59,10 @@ const FeedScreen: React.FC = () => {
 
       if (searchQuery.trim()) {
         params.q = searchQuery.trim();
+      }
+
+      if (showMyListings && user?.id) {
+        params.userId = user.id;
       }
 
       const response = await listingsApi.getListings(params);
@@ -86,11 +91,21 @@ const FeedScreen: React.FC = () => {
       setIsRefreshing(false);
       setIsLoadingMore(false);
     }
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, searchQuery, showMyListings, user?.id]);
 
   useEffect(() => {
     fetchListings(1);
   }, [fetchListings]);
+
+  // Refresh listings when screen comes into focus (e.g., after creating a new listing)
+  useFocusEffect(
+    useCallback(() => {
+      // Only refresh if we're not currently loading and not on the first mount
+      if (!isLoading && listings.length > 0) {
+        fetchListings(1, true);
+      }
+    }, [fetchListings, isLoading, listings.length])
+  );
 
   const handleRefresh = () => {
     setCurrentPage(1);
@@ -110,6 +125,11 @@ const FeedScreen: React.FC = () => {
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
+    setCurrentPage(1);
+  };
+
+  const handleToggleMyListings = () => {
+    setShowMyListings(!showMyListings);
     setCurrentPage(1);
   };
 
@@ -178,9 +198,42 @@ const FeedScreen: React.FC = () => {
         style={styles.categoryFilter}
       />
 
+      <View style={styles.filterRow}>
+        <TouchableOpacity
+          style={[styles.filterButton, showMyListings && styles.filterButtonActive]}
+          onPress={handleToggleMyListings}
+        >
+          <User size={16} color={showMyListings ? 'white' : COLORS.primary.DEFAULT} />
+          <Text style={[
+            styles.filterButtonText,
+            showMyListings && styles.filterButtonTextActive
+          ]}>
+            My Listings
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.filterButton, !showMyListings && styles.filterButtonActive]}
+          onPress={() => setShowMyListings(false)}
+        >
+          <Grid size={16} color={!showMyListings ? 'white' : COLORS.primary.DEFAULT} />
+          <Text style={[
+            styles.filterButtonText,
+            !showMyListings && styles.filterButtonTextActive
+          ]}>
+            All Listings
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>
-          {searchQuery ? `Search results for "${searchQuery}"` : 'Latest Listings'}
+          {showMyListings
+            ? 'My Listings'
+            : searchQuery
+              ? `Search results for "${searchQuery}"`
+              : 'Latest Listings'
+          }
         </Text>
         <Text style={styles.listingCount}>
           {(listings || []).length} item{(listings || []).length !== 1 ? 's' : ''}
@@ -205,9 +258,11 @@ const FeedScreen: React.FC = () => {
       <List size={64} color={COLORS.neutral.gray} />
       <Text style={styles.emptyTitle}>No listings found</Text>
       <Text style={styles.emptySubtitle}>
-        {searchQuery || selectedCategory
-          ? 'Try adjusting your search criteria'
-          : 'Be the first to post an item!'}
+        {showMyListings
+          ? 'You haven\'t posted any listings yet. Create your first listing to get started!'
+          : searchQuery || selectedCategory
+            ? 'Try adjusting your search criteria'
+            : 'Be the first to post an item!'}
       </Text>
     </View>
   );
@@ -356,6 +411,35 @@ const styles = StyleSheet.create({
     fontFamily: TYPOGRAPHY.fontFamily.inter,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    backgroundColor: COLORS.gray[100],
+    borderRadius: 12,
+    padding: 4,
+  },
+  filterButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  filterButtonActive: {
+    backgroundColor: COLORS.primary.DEFAULT,
+  },
+  filterButtonText: {
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontWeight: '500',
+    color: COLORS.primary.DEFAULT,
+    fontFamily: TYPOGRAPHY.fontFamily.inter,
+  },
+  filterButtonTextActive: {
+    color: 'white',
   },
 });
 

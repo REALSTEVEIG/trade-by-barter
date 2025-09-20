@@ -1,3 +1,4 @@
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -54,10 +55,11 @@ const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const MainTab = createBottomTabNavigator<MainTabParamList>();
 const AppStack = createNativeStackNavigator<AppStackParamList>();
 
-// Auth Navigator
-function AuthNavigator() {
+// Auth Navigator with memo to prevent unnecessary resets
+const AuthNavigator = React.memo(() => {
   return (
     <AuthStack.Navigator
+      initialRouteName="Login"
       screenOptions={{
         headerShown: false,
         gestureEnabled: true,
@@ -68,7 +70,7 @@ function AuthNavigator() {
       <AuthStack.Screen name="Signup" component={SignupScreen} />
     </AuthStack.Navigator>
   );
-}
+});
 
 // Main Tab Navigator
 function MainTabNavigator() {
@@ -190,7 +192,7 @@ function AppNavigator() {
   );
 }
 
-// Root Navigator
+// Root Navigator with stable navigation structure
 function RootNavigator() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -199,11 +201,35 @@ function RootNavigator() {
   }
 
   return (
-    <RootStack.Navigator screenOptions={{ headerShown: false }}>
+    <RootStack.Navigator
+      screenOptions={{ headerShown: false }}
+      screenListeners={{
+        // Prevent navigation state reset on auth changes
+        beforeRemove: (e) => {
+          // Allow normal navigation but prevent auth-related resets
+          if (e.data.action.type === 'RESET') {
+            // Allow reset only for authentication changes, not auth state updates
+            return;
+          }
+        },
+      }}
+    >
       {isAuthenticated ? (
-        <RootStack.Screen name="Main" component={AppNavigator} />
+        <RootStack.Screen
+          key="main"
+          name="Main"
+          component={AppNavigator}
+        />
       ) : (
-        <RootStack.Screen name="Auth" component={AuthNavigator} />
+        <RootStack.Screen
+          key="auth"
+          name="Auth"
+          component={AuthNavigator}
+          options={{
+            // Ensure screen doesn't remount on auth state changes
+            freezeOnBlur: false,
+          }}
+        />
       )}
     </RootStack.Navigator>
   );

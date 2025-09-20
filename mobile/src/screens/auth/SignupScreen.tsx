@@ -7,14 +7,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ChevronDown, Check } from 'lucide-react-native';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/contexts/toast-context';
 import { AuthStackParamList } from '@/navigation';
-import { COLORS, TYPOGRAPHY, ERROR_MESSAGES } from '@/constants';
+import { COLORS, TYPOGRAPHY, ERROR_MESSAGES, NIGERIAN_STATES } from '@/constants';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Loading from '@/components/ui/Loading';
@@ -28,6 +31,9 @@ interface SignupForm {
   phone: string;
   password: string;
   confirmPassword: string;
+  state: string;
+  city: string;
+  displayName: string;
 }
 
 const SignupScreen: React.FC = () => {
@@ -42,9 +48,13 @@ const SignupScreen: React.FC = () => {
     phone: '',
     password: '',
     confirmPassword: '',
+    state: '',
+    city: '',
+    displayName: '',
   });
   
   const [formErrors, setFormErrors] = useState<Partial<SignupForm>>({});
+  const [showStateModal, setShowStateModal] = useState(false);
 
   const validateForm = (): boolean => {
     const errors: Partial<SignupForm> = {};
@@ -83,6 +93,14 @@ const SignupScreen: React.FC = () => {
       errors.confirmPassword = 'Passwords do not match';
     }
     
+    if (!form.state.trim()) {
+      errors.state = 'State is required';
+    }
+    
+    if (!form.city.trim()) {
+      errors.city = 'City is required';
+    }
+    
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -95,15 +113,17 @@ const SignupScreen: React.FC = () => {
     }
 
     try {
+      const displayName = form.displayName.trim() || `${form.firstName.trim()} ${form.lastName.trim()}`;
+      
       await signup({
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
         email: form.email.trim().toLowerCase(),
         phoneNumber: form.phone.trim(),
         password: form.password,
-        state: 'Lagos', // Default state - should be collected in form
-        city: 'Ikeja', // Default city - should be collected in form
-        displayName: `${form.firstName.trim()} ${form.lastName.trim()}`,
+        state: form.state,
+        city: form.city.trim(),
+        displayName,
       });
       
       showToast({
@@ -260,6 +280,44 @@ const SignupScreen: React.FC = () => {
               />
             </View>
 
+            <View style={styles.input}>
+              <Text style={styles.label}>State *</Text>
+              <TouchableOpacity
+                style={[styles.dropdownButton, formErrors.state ? styles.dropdownError : undefined]}
+                onPress={() => setShowStateModal(true)}
+              >
+                <Text style={[styles.dropdownText, !form.state && styles.dropdownPlaceholder]}>
+                  {form.state || 'Select your state'}
+                </Text>
+                <ChevronDown size={20} color={COLORS.neutral.gray} />
+              </TouchableOpacity>
+              {formErrors.state && (
+                <Text style={styles.errorText}>{formErrors.state}</Text>
+              )}
+            </View>
+
+            <View style={styles.input}>
+              <Input
+                label="City"
+                value={form.city}
+                onChangeText={(value) => handleInputChange('city', value)}
+                placeholder="Enter your city"
+                autoCapitalize="words"
+                error={formErrors.city}
+              />
+            </View>
+
+            <View style={styles.input}>
+              <Input
+                label="Display Name (Optional)"
+                value={form.displayName}
+                onChangeText={(value) => handleInputChange('displayName', value)}
+                placeholder="How you want to be shown to others"
+                autoCapitalize="words"
+                error={formErrors.displayName}
+              />
+            </View>
+
             <Text style={styles.termsText}>
               By creating an account, you agree to our{' '}
               <Text style={styles.termsLink}>Terms of Service</Text>
@@ -286,6 +344,46 @@ const SignupScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
         </ScrollView>
+
+        {/* State Selection Modal */}
+        <Modal visible={showStateModal} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Select State</Text>
+                <TouchableOpacity onPress={() => setShowStateModal(false)}>
+                  <Text style={styles.modalClose}>×</Text>
+                </TouchableOpacity>
+              </View>
+              <FlatList
+                data={NIGERIAN_STATES}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[
+                      styles.modalItem,
+                      form.state === item && styles.modalItemSelected
+                    ]}
+                    onPress={() => {
+                      handleInputChange('state', item);
+                      setShowStateModal(false);
+                    }}
+                  >
+                    <Text style={[
+                      styles.modalItemText,
+                      form.state === item && styles.modalItemTextSelected
+                    ]}>
+                      {item}
+                    </Text>
+                    {form.state === item && (
+                      <Check size={20} color={COLORS.primary.DEFAULT} />
+                    )}
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -401,6 +499,94 @@ const styles = StyleSheet.create({
     fontFamily: TYPOGRAPHY.fontFamily.inter,
     marginTop: 4,
     paddingHorizontal: 4,
+  },
+  label: {
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontWeight: '500',
+    color: COLORS.neutral.dark,
+    fontFamily: TYPOGRAPHY.fontFamily.inter,
+    marginBottom: 8,
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: COLORS.neutral.light,
+    borderRadius: 12,
+    backgroundColor: 'white',
+  },
+  dropdownError: {
+    borderColor: COLORS.status.error,
+  },
+  dropdownText: {
+    fontSize: TYPOGRAPHY.fontSize.base,
+    color: COLORS.neutral.dark,
+    fontFamily: TYPOGRAPHY.fontFamily.inter,
+  },
+  dropdownPlaceholder: {
+    color: COLORS.neutral.gray,
+  },
+  errorText: {
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: COLORS.status.error,
+    fontFamily: TYPOGRAPHY.fontFamily.inter,
+    marginTop: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '60%',
+    paddingTop: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.neutral.light,
+  },
+  modalTitle: {
+    fontSize: TYPOGRAPHY.fontSize.lg,
+    fontWeight: '600',
+    color: COLORS.neutral.dark,
+    fontFamily: TYPOGRAPHY.fontFamily.poppins,
+  },
+  modalClose: {
+    fontSize: 24,
+    color: COLORS.neutral.gray,
+    fontWeight: '300',
+  },
+  modalItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.neutral.light,
+  },
+  modalItemSelected: {
+    backgroundColor: COLORS.primary[100] + '40',
+  },
+  modalItemText: {
+    fontSize: TYPOGRAPHY.fontSize.base,
+    color: COLORS.neutral.dark,
+    fontFamily: TYPOGRAPHY.fontFamily.inter,
+  },
+  modalItemTextSelected: {
+    color: COLORS.primary.DEFAULT,
+    fontWeight: '500',
   },
 });
 
