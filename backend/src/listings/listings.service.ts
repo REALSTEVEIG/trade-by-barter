@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AwsS3Service } from './aws-s3.service';
 import { CreateListingDto, UpdateListingDto, SearchListingsDto, SortByFilter, TradeTypeFilter } from './dto';
 import type { ListingResponse, SearchListingsResponse, ListingOwnerResponse } from './dto';
 
 @Injectable()
 export class ListingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly awsS3Service: AwsS3Service
+  ) {}
 
   private formatPrice(priceInKobo?: number): string | undefined {
     if (!priceInKobo || priceInKobo === 0) return undefined;
@@ -100,23 +104,28 @@ export class ListingsService {
 
   async createListing(userId: string, createListingDto: CreateListingDto): Promise<ListingResponse> {
     // Validate trade type logic
-    if (createListingDto.isSwapOnly && createListingDto.priceInKobo) {
-      throw new BadRequestException('Swap-only listings cannot have a price');
-    }
-
     if (!createListingDto.acceptsCash && !createListingDto.acceptsSwap) {
       throw new BadRequestException('Listing must accept either cash or swap');
+    }
+
+    // Handle price logic based on trade type
+    let finalPrice: number | undefined = createListingDto.priceInKobo;
+    
+    if (createListingDto.isSwapOnly) {
+      finalPrice = undefined; // Force null for swap-only listings
+    } else if (createListingDto.acceptsCash && !finalPrice) {
+      throw new BadRequestException('Cash listings must have a price');
     }
 
     const listing = await this.prisma.listing.create({
       data: {
         userId,
         title: createListingDto.title,
-        description: createListingDto.description,
+        description: createListingDto.description || '',
         category: createListingDto.category as any,
         subcategory: createListingDto.subcategory,
         condition: createListingDto.condition as any,
-        priceInKobo: createListingDto.priceInKobo,
+        priceInKobo: finalPrice,
         isSwapOnly: createListingDto.isSwapOnly || false,
         acceptsCash: createListingDto.acceptsCash ?? true,
         acceptsSwap: createListingDto.acceptsSwap ?? true,
@@ -132,6 +141,104 @@ export class ListingsService {
     });
 
     return this.formatListingResponse(listing, userId);
+  }
+
+  async createListingWithImages(
+    userId: string,
+    createListingDto: CreateListingDto,
+    files?: Express.Multer.File[]
+  ): Promise<ListingResponse> {
+    // Validate trade type logic
+    if (!createListingDto.acceptsCash && !createListingDto.acceptsSwap) {
+      throw new BadRequestException('Listing must accept either cash or swap');
+    }
+
+    // Handle price logic based on trade type
+    let finalPrice: number | undefined = createListingDto.priceInKobo;
+    
+    if (createListingDto.isSwapOnly) {
+      finalPrice = undefined; // Force null for swap-only listings
+    } else if (createListingDto.acceptsCash && !finalPrice) {
+      throw new BadRequestException('Cash listings must have a price');
+    }
+
+    if (files && files.length > 6) {
+      throw new BadRequestException('Maximum 6 images allowed per listing');
+    }
+
+    const result = await this.prisma.$transaction(async (prisma) => {
+      // Create the listing
+      const listing = await prisma.listing.create({
+        data: {
+          userId,
+          title: createListingDto.title,
+          description: createListingDto.description || '',
+          category: createListingDto.category as any,
+          subcategory: createListingDto.subcategory,
+          condition: createListingDto.condition as any,
+          priceInKobo: finalPrice,
+          isSwapOnly: createListingDto.isSwapOnly || false,
+          acceptsCash: createListingDto.acceptsCash ?? true,
+          acceptsSwap: createListingDto.acceptsSwap ?? true,
+          swapPreferences: createListingDto.swapPreferences || [],
+          city: createListingDto.city,
+          state: createListingDto.state,
+          specificLocation: createListingDto.specificLocation,
+          status: 'ACTIVE',
+        },
+      });
+
+      // Handle image uploads if files are provided
+      if (files && files.length > 0) {
+        const mediaRecords: any[] = [];
+
+        // Process each file
+        for (const file of files) {
+          // Validate file
+          if (file.size > 5 * 1024 * 1024) {
+            throw new BadRequestException('File size cannot exceed 5MB');
+          }
+
+          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+          if (!allowedTypes.includes(file.mimetype)) {
+            throw new BadRequestException('Only JPEG, PNG, and WebP images are allowed');
+          }
+
+          // Upload to S3
+          const s3Result = await this.awsS3Service.uploadFile(file, 'listings');
+
+          mediaRecords.push({
+            filename: s3Result.filename,
+            originalName: file.originalname,
+            mimeType: file.mimetype,
+            size: file.size,
+            url: s3Result.url,
+            storageKey: s3Result.key,
+            listingId: listing.id,
+            userId: userId,
+          });
+        }
+
+        // Save media records to database
+        if (mediaRecords.length > 0) {
+          await prisma.media.createMany({
+            data: mediaRecords,
+          });
+        }
+      }
+
+      // Return listing with media
+      return prisma.listing.findUnique({
+        where: { id: listing.id },
+        include: { media: true },
+      });
+    });
+
+    if (!result) {
+      throw new BadRequestException('Failed to create listing');
+    }
+
+    return this.formatListingResponse(result, userId);
   }
 
   async getListingById(id: string, currentUserId?: string): Promise<ListingResponse> {
@@ -176,15 +283,20 @@ export class ListingsService {
       throw new ForbiddenException('You can only update your own listings');
     }
 
-    // Validate trade type logic if price is being updated
-    if (updateListingDto.isSwapOnly && updateListingDto.priceInKobo) {
-      throw new BadRequestException('Swap-only listings cannot have a price');
+    // Handle price logic based on trade type
+    let finalPrice: number | undefined = updateListingDto.priceInKobo;
+    
+    if (updateListingDto.isSwapOnly) {
+      finalPrice = undefined; // Force null for swap-only listings
+    } else if (updateListingDto.acceptsCash && !finalPrice && finalPrice !== 0) {
+      throw new BadRequestException('Cash listings must have a price');
     }
 
     const updatedListing = await this.prisma.listing.update({
       where: { id },
       data: {
         ...updateListingDto,
+        priceInKobo: finalPrice,
         category: updateListingDto.category as any,
         condition: updateListingDto.condition as any,
         status: updateListingDto.status as any,

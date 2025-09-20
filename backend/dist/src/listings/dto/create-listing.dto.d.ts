@@ -4,6 +4,7 @@ export declare enum ListingCategory {
     VEHICLES = "VEHICLES",
     FURNITURE = "FURNITURE",
     APPLIANCES = "APPLIANCES",
+    HOME_APPLIANCES = "HOME_APPLIANCES",
     BOOKS = "BOOKS",
     SPORTS = "SPORTS",
     TOYS = "TOYS",
@@ -28,7 +29,7 @@ export declare enum ItemCondition {
 }
 export declare class CreateListingDto {
     title: string;
-    description: string;
+    description?: string;
     category: ListingCategory;
     subcategory?: string;
     condition: ItemCondition;

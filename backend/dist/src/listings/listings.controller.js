@@ -85,8 +85,8 @@ let ListingsController = class ListingsController {
     async searchListings(searchDto, currentUserId) {
         return this.listingsService.searchListings(searchDto, currentUserId);
     }
-    async createListing(userId, createListingDto) {
-        return this.listingsService.createListing(userId, createListingDto);
+    async createListing(userId, createListingDto, files) {
+        return this.listingsService.createListingWithImages(userId, createListingDto, files);
     }
     async updateListing(id, userId, updateListingDto) {
         return this.listingsService.updateListing(id, userId, updateListingDto);
@@ -168,14 +168,30 @@ __decorate([
     (0, common_1.Post)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Create a new listing' }),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('images', 6, {
+        limits: {
+            fileSize: 5 * 1024 * 1024,
+            files: 6,
+        },
+        fileFilter: (req, file, callback) => {
+            if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+                callback(new Error('Only image files are allowed!'), false);
+            }
+            else {
+                callback(null, true);
+            }
+        },
+    })),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a new listing with images' }),
     (0, swagger_1.ApiResponse)({ status: 201, description: 'Listing created successfully' }),
     (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid input data' }),
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
     __param(0, (0, get_user_decorator_1.GetUser)('id')),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.UploadedFiles)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, dto_1.CreateListingDto]),
+    __metadata("design:paramtypes", [String, dto_1.CreateListingDto, Array]),
     __metadata("design:returntype", Promise)
 ], ListingsController.prototype, "createListing", null);
 __decorate([

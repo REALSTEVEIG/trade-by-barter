@@ -19,6 +19,7 @@ var ListingCategory;
     ListingCategory["VEHICLES"] = "VEHICLES";
     ListingCategory["FURNITURE"] = "FURNITURE";
     ListingCategory["APPLIANCES"] = "APPLIANCES";
+    ListingCategory["HOME_APPLIANCES"] = "HOME_APPLIANCES";
     ListingCategory["BOOKS"] = "BOOKS";
     ListingCategory["SPORTS"] = "SPORTS";
     ListingCategory["TOYS"] = "TOYS";
@@ -64,8 +65,10 @@ __decorate([
     __metadata("design:type", String)
 ], CreateListingDto.prototype, "title", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => value === '' ? undefined : value),
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.Length)(10, 2000, { message: 'Description must be between 10 and 2000 characters' }),
+    (0, class_validator_1.Length)(1, 2000, { message: 'Description must be between 1 and 2000 characters' }),
     __metadata("design:type", String)
 ], CreateListingDto.prototype, "description", void 0);
 __decorate([
@@ -74,6 +77,7 @@ __decorate([
 ], CreateListingDto.prototype, "category", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => value === '' ? undefined : value),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.Length)(1, 50),
     __metadata("design:type", String)
@@ -87,7 +91,12 @@ __decorate([
     (0, class_validator_1.IsNumber)({}, { message: 'Price must be a valid number' }),
     (0, class_validator_1.Min)(0, { message: 'Price must be a positive number' }),
     (0, class_validator_1.Max)(100000000, { message: 'Price cannot exceed 1,000,000 Naira' }),
-    (0, class_transformer_1.Transform)(({ value }) => parseInt(value) || 0),
+    (0, class_transformer_1.Transform)(({ value }) => {
+        if (value === '' || value === null || value === undefined)
+            return undefined;
+        const parsed = parseInt(value);
+        return isNaN(parsed) ? undefined : parsed;
+    }),
     __metadata("design:type", Number)
 ], CreateListingDto.prototype, "priceInKobo", void 0);
 __decorate([
@@ -110,6 +119,20 @@ __decorate([
 ], CreateListingDto.prototype, "acceptsSwap", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => {
+        if (!value)
+            return [];
+        if (typeof value === 'string') {
+            try {
+                const parsed = JSON.parse(value);
+                return Array.isArray(parsed) ? parsed : [value];
+            }
+            catch {
+                return [value];
+            }
+        }
+        return Array.isArray(value) ? value : [value];
+    }),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsString)({ each: true }),
     (0, class_validator_1.ArrayMaxSize)(10, { message: 'Maximum 10 swap preferences allowed' }),
@@ -127,6 +150,7 @@ __decorate([
 ], CreateListingDto.prototype, "state", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => value === '' ? undefined : value),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.Length)(1, 200),
     __metadata("design:type", String)

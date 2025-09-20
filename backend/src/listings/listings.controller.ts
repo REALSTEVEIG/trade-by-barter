@@ -124,15 +124,30 @@ export class ListingsController {
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a new listing' })
+  @UseInterceptors(FilesInterceptor('images', 6, {
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB per file
+      files: 6, // Maximum 6 files
+    },
+    fileFilter: (req, file, callback) => {
+      if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+        callback(new Error('Only image files are allowed!'), false);
+      } else {
+        callback(null, true);
+      }
+    },
+  }))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Create a new listing with images' })
   @ApiResponse({ status: 201, description: 'Listing created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @HttpCode(HttpStatus.CREATED)
   async createListing(
     @GetUser('id') userId: string,
     @Body() createListingDto: CreateListingDto,
+    @UploadedFiles() files?: Express.Multer.File[],
   ): Promise<ListingResponse> {
-    return this.listingsService.createListing(userId, createListingDto);
+    return this.listingsService.createListingWithImages(userId, createListingDto, files);
   }
 
   @Put(':id')

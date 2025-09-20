@@ -11,7 +11,7 @@ export declare class ListingsController {
     getMyListings(userId: string): Promise<ListingResponse[]>;
     getListingById(id: string, currentUserId?: string): Promise<ListingResponse>;
     searchListings(searchDto: SearchListingsDto, currentUserId?: string): Promise<SearchListingsResponse>;
-    createListing(userId: string, createListingDto: CreateListingDto): Promise<ListingResponse>;
+    createListing(userId: string, createListingDto: CreateListingDto, files?: Express.Multer.File[]): Promise<ListingResponse>;
     updateListing(id: string, userId: string, updateListingDto: UpdateListingDto): Promise<ListingResponse>;
     deleteListing(id: string, userId: string): Promise<{
         message: string;

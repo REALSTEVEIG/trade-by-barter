@@ -7,6 +7,7 @@ export enum ListingCategory {
   VEHICLES = 'VEHICLES',
   FURNITURE = 'FURNITURE',
   APPLIANCES = 'APPLIANCES',
+  HOME_APPLIANCES = 'HOME_APPLIANCES',
   BOOKS = 'BOOKS',
   SPORTS = 'SPORTS',
   TOYS = 'TOYS',
@@ -36,14 +37,17 @@ export class CreateListingDto {
   @Length(3, 100, { message: 'Title must be between 3 and 100 characters' })
   title: string;
 
+  @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsString()
-  @Length(10, 2000, { message: 'Description must be between 10 and 2000 characters' })
-  description: string;
+  @Length(1, 2000, { message: 'Description must be between 1 and 2000 characters' })
+  description?: string;
 
   @IsEnum(ListingCategory, { message: 'Invalid category' })
   category: ListingCategory;
 
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsString()
   @Length(1, 50)
   subcategory?: string;
@@ -55,7 +59,11 @@ export class CreateListingDto {
   @IsNumber({}, { message: 'Price must be a valid number' })
   @Min(0, { message: 'Price must be a positive number' })
   @Max(100000000, { message: 'Price cannot exceed 1,000,000 Naira' }) // 100M kobo = 1M Naira
-  @Transform(({ value }) => parseInt(value) || 0)
+  @Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined) return undefined;
+    const parsed = parseInt(value);
+    return isNaN(parsed) ? undefined : parsed;
+  })
   priceInKobo?: number;
 
   @IsOptional()
@@ -74,6 +82,18 @@ export class CreateListingDto {
   acceptsSwap?: boolean = true;
 
   @IsOptional()
+  @Transform(({ value }) => {
+    if (!value) return [];
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [value];
+      } catch {
+        return [value];
+      }
+    }
+    return Array.isArray(value) ? value : [value];
+  })
   @IsArray()
   @IsString({ each: true })
   @ArrayMaxSize(10, { message: 'Maximum 10 swap preferences allowed' })
@@ -88,6 +108,7 @@ export class CreateListingDto {
   state: string;
 
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsString()
   @Length(1, 200)
   specificLocation?: string;
