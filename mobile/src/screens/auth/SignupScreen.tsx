@@ -66,13 +66,15 @@ const SignupScreen: React.FC = () => {
     if (!form.phone.trim()) {
       errors.phone = 'Phone number is required';
     } else if (!/^(\+234|234|0)?[789][01]\d{8}$/.test(form.phone)) {
-      errors.phone = 'Please enter a valid Nigerian phone number';
+      errors.phone = 'Must be a valid Nigerian number (+234XXXXXXXXX)';
     }
     
     if (!form.password) {
       errors.password = 'Password is required';
-    } else if (form.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(form.password)) {
+      errors.password = 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character';
+    } else if (form.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters long';
     }
     
     if (!form.confirmPassword) {
@@ -224,6 +226,11 @@ const SignupScreen: React.FC = () => {
                 keyboardType="phone-pad"
                 error={formErrors.phone}
               />
+              {!formErrors.phone && form.phone && (
+                <Text style={styles.helpText}>
+                  Must be a valid Nigerian number (+234XXXXXXXXX)
+                </Text>
+              )}
             </View>
 
             <View style={styles.input}>
@@ -235,6 +242,11 @@ const SignupScreen: React.FC = () => {
                 secureTextEntry
                 error={formErrors.password}
               />
+              {!formErrors.password && form.password && (
+                <Text style={styles.helpText}>
+                  Must be at least 8 characters with uppercase, lowercase, number, and special character
+                </Text>
+              )}
             </View>
 
             <View style={styles.input}>
@@ -382,6 +394,13 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.base,
     color: COLORS.neutral.gray,
     fontFamily: TYPOGRAPHY.fontFamily.inter,
+  },
+  helpText: {
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: COLORS.neutral.gray,
+    fontFamily: TYPOGRAPHY.fontFamily.inter,
+    marginTop: 4,
+    paddingHorizontal: 4,
   },
 });
 

@@ -290,8 +290,6 @@ const CreateListingScreen: React.FC = () => {
       setTimeout(() => navigation.goBack(), 2000);
       
     } catch (error: any) {
-      console.error('Error creating listing:', error);
-      
       let errorMessage = error.response?.data?.message ||
                         error.response?.data?.originalError ||
                         ERROR_MESSAGES.SERVER_ERROR;

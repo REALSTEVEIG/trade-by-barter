@@ -60,9 +60,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       // Initialize socket connection with authentication if user is authenticated
       try {
         socketService.connect();
-        console.log('Socket connected during auth initialization');
       } catch (socketError) {
-        console.error('Failed to connect socket during auth initialization:', socketError);
         // Don't fail initialization if socket connection fails
       }
     } catch (error) {
@@ -93,8 +91,6 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
         throw new Error('Invalid response from server');
       }
 
-      console.log('Login response:', response);
-
       // The backend returns AuthResponse directly, not wrapped
       let user: User;
       let accessToken: string;
@@ -129,13 +125,10 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       // Initialize socket connection with authentication
       try {
         socketService.connect();
-        console.log('Socket connected after login');
       } catch (socketError) {
-        console.error('Failed to connect socket after login:', socketError);
         // Don't fail login if socket connection fails
       }
     } catch (error: any) {
-      console.error('Login error:', error);
       let errorMessage = 'Login failed. Please try again.';
       
       if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
@@ -166,8 +159,6 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
         throw new Error('Invalid response from server');
       }
 
-      console.log('Signup response:', response);
-
       // The backend returns AuthResponse directly, not wrapped
       let user: User;
       let accessToken: string;
@@ -202,13 +193,10 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       // Initialize socket connection with authentication
       try {
         socketService.connect();
-        console.log('Socket connected after signup');
       } catch (socketError) {
-        console.error('Failed to connect socket after signup:', socketError);
         // Don't fail signup if socket connection fails
       }
     } catch (error: any) {
-      console.error('Signup error:', error);
       const errorMessage = error.response?.data?.message || 'Signup failed. Please try again.';
       setState(prev => ({
         ...prev,
@@ -227,7 +215,6 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       await authApi.logout();
     } catch (error) {
       // Continue with logout even if API call fails
-      console.error('Logout API call failed:', error);
     } finally {
       // Clear local state and tokens
       await AsyncStorage.multiRemove([
@@ -239,9 +226,8 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       // Disconnect socket
       try {
         socketService.disconnect();
-        console.log('Socket disconnected during logout');
       } catch (socketError) {
-        console.error('Failed to disconnect socket during logout:', socketError);
+        // Ignore socket disconnect errors
       }
       
       setState({
