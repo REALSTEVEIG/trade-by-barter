@@ -143,11 +143,13 @@ let AuthService = class AuthService {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
         const tokens = await this.generateTokens(user.id, user.email, user.phoneNumber);
+        const refreshTokenExpiresIn = this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d');
+        const refreshTokenExpiresAtMs = this.parseJwtExpirationToSeconds(refreshTokenExpiresIn) * 1000;
         await this.prisma.user.update({
             where: { id: user.id },
             data: {
                 refreshToken: await this.hashRefreshToken(tokens.refreshToken),
-                refreshTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                refreshTokenExpiresAt: new Date(Date.now() + refreshTokenExpiresAtMs),
                 lastActiveAt: new Date(),
             },
         });
@@ -276,8 +278,8 @@ let AuthService = class AuthService {
             email,
             phoneNumber,
         };
-        const accessTokenExpiresIn = 15 * 60;
-        const refreshTokenExpiresIn = 7 * 24 * 60 * 60;
+        const accessTokenExpiresIn = this.configService.get('JWT_EXPIRES_IN', '1h');
+        const refreshTokenExpiresIn = this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d');
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.signAsync(payload, {
                 secret: this.configService.get('JWT_SECRET'),
@@ -288,19 +290,38 @@ let AuthService = class AuthService {
                 expiresIn: refreshTokenExpiresIn,
             }),
         ]);
+        const expiresInSeconds = this.parseJwtExpirationToSeconds(accessTokenExpiresIn);
         return {
             accessToken,
             refreshToken,
-            expiresIn: accessTokenExpiresIn,
+            expiresIn: expiresInSeconds,
         };
+    }
+    parseJwtExpirationToSeconds(expiration) {
+        const unit = expiration.slice(-1);
+        const value = parseInt(expiration.slice(0, -1));
+        switch (unit) {
+            case 's':
+                return value;
+            case 'm':
+                return value * 60;
+            case 'h':
+                return value * 60 * 60;
+            case 'd':
+                return value * 24 * 60 * 60;
+            default:
+                return parseInt(expiration);
+        }
     }
     async updateRefreshToken(userId, refreshToken) {
         const hashedRefreshToken = await this.hashRefreshToken(refreshToken);
+        const refreshTokenExpiresIn = this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d');
+        const refreshTokenExpiresAtMs = this.parseJwtExpirationToSeconds(refreshTokenExpiresIn) * 1000;
         await this.prisma.user.update({
             where: { id: userId },
             data: {
                 refreshToken: hashedRefreshToken,
-                refreshTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                refreshTokenExpiresAt: new Date(Date.now() + refreshTokenExpiresAtMs),
             },
         });
     }

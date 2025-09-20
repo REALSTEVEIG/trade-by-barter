@@ -47,6 +47,7 @@ export declare class AuthService {
         message: string;
     }>;
     private generateTokens;
+    private parseJwtExpirationToSeconds;
     private updateRefreshToken;
     private hashPassword;
     private hashRefreshToken;
