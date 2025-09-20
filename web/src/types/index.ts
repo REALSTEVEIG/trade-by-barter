@@ -21,22 +21,33 @@ export interface Listing {
   title: string;
   description: string;
   category: string;
-  condition: 'new' | 'like-new' | 'good' | 'fair' | 'poor';
-  tradeType: 'swap' | 'cash' | 'hybrid';
-  priceInKobo?: number; // Price in kobo (for cash/hybrid trades)
-  desiredItems?: string[];
-  images: MediaFile[];
+  condition: string;
+  price?: number | null; // Price in kobo (for cash/hybrid trades)
+  isSwapOnly: boolean;
+  acceptsCash: boolean;
+  acceptsSwap: boolean;
+  swapPreferences: string[];
+  images: (string | MediaFile)[]; // API returns string URLs directly
   city: string;
   state: string;
   specificLocation?: string;
-  status: 'active' | 'paused' | 'completed' | 'cancelled';
-  userId: string;
-  user?: User;
-  views: number;
-  favorites: number;
-  isFavorite?: boolean; // Whether current user has favorited this listing
-  createdAt: Date;
-  updatedAt: Date;
+  status: string;
+  owner: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    displayName: string;
+    profileImageUrl?: string;
+    isPhoneVerified: boolean;
+    averageRating: number;
+    totalReviews: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+  viewCount: number;
+  favoriteCount: number;
+  isFavorite: boolean;
+  isOwner: boolean;
 }
 
 export interface MediaFile {

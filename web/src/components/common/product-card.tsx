@@ -8,13 +8,16 @@ import { Button } from '@/components/ui/button';
 export interface ProductCardProps {
   id: string;
   title: string;
-  price: number; // Price in kobo
+  price: number | null; // Price in kobo, null for swap-only
   location: string;
   imageUrl: string;
   imageAlt?: string;
   isFavorite?: boolean;
   onFavoriteToggle?: (id: string) => void;
   className?: string;
+  isSwapOnly?: boolean;
+  acceptsCash?: boolean;
+  acceptsSwap?: boolean;
 }
 
 export function ProductCard({
@@ -27,6 +30,9 @@ export function ProductCard({
   isFavorite = false,
   onFavoriteToggle,
   className,
+  isSwapOnly = false,
+  acceptsCash = true,
+  acceptsSwap = true,
 }: ProductCardProps): React.ReactElement {
   const handleFavoriteClick = (e: React.MouseEvent): void => {
     e.preventDefault();
@@ -67,9 +73,28 @@ export function ProductCard({
             {title}
           </h3>
           
-          <p className="product-card-price naira-symbol mb-2">
-            {formatNaira(price)}
-          </p>
+          <div className="product-card-price mb-2">
+            {isSwapOnly || (!acceptsCash && acceptsSwap) ? (
+              <span className="text-secondary font-medium">Swap Only</span>
+            ) : acceptsCash && !acceptsSwap ? (
+              price && price > 0 ? (
+                <span className="naira-symbol font-semibold">{formatNaira(price)}</span>
+              ) : (
+                <span className="text-neutral-gray">No price set</span>
+              )
+            ) : acceptsCash && acceptsSwap ? (
+              <div className="flex items-center gap-2">
+                {price && price > 0 ? (
+                  <span className="naira-symbol font-semibold">{formatNaira(price)}</span>
+                ) : (
+                  <span className="text-neutral-gray">No price set</span>
+                )}
+                <span className="text-secondary text-sm">or Swap</span>
+              </div>
+            ) : (
+              <span className="text-secondary font-medium">Swap Only</span>
+            )}
+          </div>
           
           <div className="flex items-center text-neutral-gray">
             <MapPin className="h-3 w-3 mr-1" />

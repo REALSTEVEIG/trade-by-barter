@@ -9,9 +9,10 @@ const nextConfig = {
   images: {
     domains: [
       'cdn.tradebybarter.ng',
-      'images.tradebybarter.ng', 
+      'images.tradebybarter.ng',
       'storage.tradebybarter.ng',
-      'localhost'
+      'localhost',
+      'tradebybarter.s3.eu-north-1.amazonaws.com'
     ],
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],

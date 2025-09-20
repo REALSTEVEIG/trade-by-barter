@@ -313,13 +313,16 @@ export default function FeedPage(): React.ReactElement {
                   key={listing.id}
                   id={listing.id}
                   title={listing.title}
-                  price={listing.priceInKobo || 0}
+                  price={listing.price ?? null}
                   location={`${listing.city}, ${listing.state}`}
-                  imageUrl={listing.images[0]?.url || '/api/placeholder/300/200'}
+                  imageUrl={typeof listing.images[0] === 'string' ? listing.images[0] : listing.images[0]?.url || '/api/placeholder/300/200'}
                   imageAlt={listing.title}
                   isFavorite={Boolean(listing.isFavorite)}
                   onFavoriteToggle={handleFavoriteToggle}
                   className={viewMode === 'list' ? 'flex' : ''}
+                  isSwapOnly={listing.isSwapOnly}
+                  acceptsCash={listing.acceptsCash}
+                  acceptsSwap={listing.acceptsSwap}
                 />
               ))}
             </div>
