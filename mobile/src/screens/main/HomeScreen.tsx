@@ -23,7 +23,7 @@ const mockListings: Listing[] = [
     id: '1',
     title: 'Wireless Headphones',
     description: 'High-quality wireless headphones in excellent condition',
-    category: 'Electronics',
+    category: 'ELECTRONICS',
     condition: 'like-new',
     images: ['https://example.com/headphones.jpg'],
     user: {
@@ -39,11 +39,14 @@ const mockListings: Listing[] = [
       joinedAt: '2024-01-01',
       lastSeen: '2024-07-01',
     },
-    location: {
-      state: 'Lagos',
-      city: 'Ikeja',
-    },
-    status: 'active',
+    userId: '1',
+    city: 'Ikeja',
+    state: 'Lagos',
+    price: 1500000, // 15,000 Naira in kobo
+    isSwapOnly: false,
+    acceptsCash: true,
+    acceptsSwap: true,
+    status: 'ACTIVE',
     tags: ['audio', 'bluetooth'],
     views: 45,
     favoritesCount: 8,

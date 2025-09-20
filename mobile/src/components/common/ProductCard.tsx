@@ -27,18 +27,46 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onFavorite,
   variant = 'grid',
 }) => {
+  const formatNaira = (priceInKobo: number): string => {
+    return `₦${(priceInKobo / 100).toLocaleString()}`;
+  };
+
   const formatPrice = (listing: Listing) => {
-    // For items that might have estimated values or are for trade
-    if (listing.wantedItems && listing.wantedItems.length > 0) {
-      return 'Trade';
+    // Check if this is a swap-only listing
+    if (listing.isSwapOnly || (!listing.acceptsCash && listing.acceptsSwap)) {
+      return 'Swap Only';
     }
-    // Assuming there's a price field or estimated value
-    return `₦${(15000).toLocaleString()}`; // Placeholder - would come from API
+    
+    // Cash only listing
+    if (listing.acceptsCash && !listing.acceptsSwap) {
+      if (listing.price && listing.price > 0) {
+        return formatNaira(listing.price);
+      }
+      return 'No price set';
+    }
+    
+    // Both cash and swap accepted
+    if (listing.acceptsCash && listing.acceptsSwap) {
+      if (listing.price && listing.price > 0) {
+        return `${formatNaira(listing.price)} or Swap`;
+      }
+      return 'No price set or Swap';
+    }
+    
+    // Default fallback
+    return 'Swap Only';
   };
 
   const getImageSource = () => {
     if (listing.images && listing.images.length > 0) {
-      return { uri: listing.images[0] };
+      // Handle both string URLs and MediaFile objects
+      const imageUrl = typeof listing.images[0] === 'string'
+        ? listing.images[0]
+        : listing.images[0]?.url;
+      
+      if (imageUrl) {
+        return { uri: imageUrl };
+      }
     }
     // Return null for placeholder - we'll handle this in render
     return null;
@@ -141,7 +169,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               color={COLORS.neutral.gray}
             />
             <Text style={styles.location} numberOfLines={1}>
-              {listing.location.city}, {listing.location.state}
+              {listing.city}, {listing.state}
             </Text>
           </View>
 

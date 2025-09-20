@@ -64,26 +64,47 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
+// Media file interface for images
+export interface MediaFile {
+  id: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  storageKey?: string;
+  listingId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Listing Types
 export interface Listing {
   id: string;
   title: string;
   description: string;
   category: string;
+  subcategory?: string;
   condition: 'new' | 'like-new' | 'good' | 'fair' | 'poor';
-  images: string[];
+  images: (string | MediaFile)[];
   user: User;
-  location: {
-    state: string;
-    city: string;
-    address?: string;
-  };
-  status: 'active' | 'inactive' | 'traded' | 'deleted';
+  userId: string;
+  city: string;
+  state: string;
+  specificLocation?: string;
+  price?: number | null; // Price in kobo
+  isSwapOnly: boolean;
+  acceptsCash: boolean;
+  acceptsSwap: boolean;
+  swapPreferences?: string[];
+  status: 'ACTIVE' | 'INACTIVE' | 'TRADED' | 'DELETED' | 'PENDING';
   wantedItems?: string[];
-  tags: string[];
+  tags?: string[];
   views: number;
   favoritesCount: number;
   isFavorited?: boolean;
+  isFavorite?: boolean; // Alternative property name
   createdAt: string;
   updatedAt: string;
 }
