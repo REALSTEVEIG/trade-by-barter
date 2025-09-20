@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { API_CONFIG } from '@/constants/network';
+import { STORAGE_KEYS } from '@/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface SocketAuth {
@@ -49,13 +50,13 @@ class SocketService {
 
   private async initializeAuth() {
     try {
-      const token = await AsyncStorage.getItem('accessToken');
-      const userStr = await AsyncStorage.getItem('user');
+      const token = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      const userStr = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
       
       if (token && userStr) {
         const user = JSON.parse(userStr);
         this.auth = { token, userId: user.id };
-        console.log('Socket auth initialized successfully');
+        console.log('Socket auth initialized successfully with user:', user.id);
       } else {
         console.warn('No token or user data found for socket authentication');
         this.auth = null;
