@@ -333,14 +333,27 @@ let AuthService = class AuthService {
     }
     validateAndFormatPhoneNumber(phoneNumber) {
         try {
-            const parsed = (0, libphonenumber_js_1.parsePhoneNumber)(phoneNumber, 'NG');
+            let cleanedPhone = phoneNumber.replace(/[^\d+]/g, '');
+            if (cleanedPhone.startsWith('0')) {
+                cleanedPhone = '+234' + cleanedPhone.substring(1);
+            }
+            else if (cleanedPhone.startsWith('234')) {
+                cleanedPhone = '+' + cleanedPhone;
+            }
+            else if (!cleanedPhone.startsWith('+234')) {
+                cleanedPhone = '+234' + cleanedPhone;
+            }
+            const parsed = (0, libphonenumber_js_1.parsePhoneNumber)(cleanedPhone, 'NG');
             if (!parsed || !parsed.isValid()) {
-                throw new common_1.BadRequestException('Invalid Nigerian phone number format');
+                throw new common_1.BadRequestException('Invalid Nigerian phone number format. Please provide a valid Nigerian phone number.');
             }
             return parsed.formatInternational();
         }
         catch (error) {
-            throw new common_1.BadRequestException('Invalid Nigerian phone number format');
+            if (error instanceof common_1.BadRequestException) {
+                throw error;
+            }
+            throw new common_1.BadRequestException('Invalid Nigerian phone number format. Please provide a valid Nigerian phone number.');
         }
     }
     generateOtp() {

@@ -38,9 +38,6 @@ __decorate([
         example: '+2348012345678',
     }),
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.Matches)(/^\+234[789][01]\d{8}$/, {
-        message: 'Phone number must be a valid Nigerian number (+234XXXXXXXXX)',
-    }),
     __metadata("design:type", String)
 ], SignupDto.prototype, "phoneNumber", void 0);
 __decorate([

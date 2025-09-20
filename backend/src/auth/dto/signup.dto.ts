@@ -14,9 +14,6 @@ export class SignupDto {
     example: '+2348012345678',
   })
   @IsString()
-  @Matches(/^\+234[789][01]\d{8}$/, {
-    message: 'Phone number must be a valid Nigerian number (+234XXXXXXXXX)',
-  })
   phoneNumber: string;
 
   @ApiProperty({

@@ -404,13 +404,31 @@ export class AuthService {
 
   private validateAndFormatPhoneNumber(phoneNumber: string): string {
     try {
-      const parsed = parsePhoneNumber(phoneNumber, 'NG');
+      // Clean the input: remove all non-digit characters except +
+      let cleanedPhone = phoneNumber.replace(/[^\d+]/g, '');
+      
+      // Handle different Nigerian phone number formats
+      if (cleanedPhone.startsWith('0')) {
+        // Format: 07066142784 -> +2347066142784
+        cleanedPhone = '+234' + cleanedPhone.substring(1);
+      } else if (cleanedPhone.startsWith('234')) {
+        // Format: 2347066142784 -> +2347066142784
+        cleanedPhone = '+' + cleanedPhone;
+      } else if (!cleanedPhone.startsWith('+234')) {
+        // Format: 7066142784 -> +2347066142784
+        cleanedPhone = '+234' + cleanedPhone;
+      }
+      
+      const parsed = parsePhoneNumber(cleanedPhone, 'NG');
       if (!parsed || !parsed.isValid()) {
-        throw new BadRequestException('Invalid Nigerian phone number format');
+        throw new BadRequestException('Invalid Nigerian phone number format. Please provide a valid Nigerian phone number.');
       }
       return parsed.formatInternational();
     } catch (error) {
-      throw new BadRequestException('Invalid Nigerian phone number format');
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Invalid Nigerian phone number format. Please provide a valid Nigerian phone number.');
     }
   }
 
