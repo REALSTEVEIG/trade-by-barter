@@ -79,20 +79,19 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       const response = await authApi.login(credentials);
       
       // Defensive check for response structure
-      if (!response || !response.data) {
+      if (!response) {
         throw new Error('Invalid response from server');
       }
 
       console.log('Login response:', response);
 
-      // Handle different possible response structures
+      // The backend returns AuthResponse directly, not wrapped
       let user: User;
       let accessToken: string;
       let refreshToken: string;
 
-      // The API client wraps the response in { success: boolean, data: AuthResponse }
-      // The backend returns raw AuthResponse for successful requests
-      const authData = response.data as any;
+      // Check if response has the auth data directly or wrapped in data
+      const authData = response.data ? response.data : response as any;
       
       if (!authData || !authData.user || !authData.accessToken || !authData.refreshToken) {
         throw new Error('Missing authentication data in response');
@@ -144,20 +143,19 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       const response = await authApi.signup(data);
       
       // Defensive check for response structure
-      if (!response || !response.data) {
+      if (!response) {
         throw new Error('Invalid response from server');
       }
 
       console.log('Signup response:', response);
 
-      // Handle different possible response structures
+      // The backend returns AuthResponse directly, not wrapped
       let user: User;
       let accessToken: string;
       let refreshToken: string;
 
-      // The API client wraps the response in { success: boolean, data: AuthResponse }
-      // The backend returns raw AuthResponse for successful requests
-      const authData = response.data as any;
+      // Check if response has the auth data directly or wrapped in data
+      const authData = response.data ? response.data : response as any;
       
       if (!authData || !authData.user || !authData.accessToken || !authData.refreshToken) {
         throw new Error('Missing authentication data in response');
@@ -222,7 +220,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
   const refreshUser = async (): Promise<void> => {
     try {
       const response = await authApi.getProfile();
-      const user = response.data as User;
+      const user = response.data ? response.data as User : (response as any);
       
       // Update stored user data
       await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));

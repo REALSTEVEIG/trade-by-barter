@@ -8,6 +8,7 @@ import {
   TextStyle,
   TextInputProps,
 } from 'react-native';
+import { Eye, EyeOff, Mail, Lock, Phone, Search, MapPin, Camera, Image, Plus, Check, X, ArrowLeft, ArrowRight, Heart, Star, Home, Settings, Menu, MoreHorizontal, User } from 'lucide-react-native';
 import { COLORS, TYPOGRAPHY } from '@/constants';
 
 export interface InputProps extends Omit<TextInputProps, 'style'> {
@@ -112,33 +113,43 @@ export const Input: React.FC<InputProps> = ({
     ? (isPasswordVisible ? 'eye-off' : 'eye')
     : rightIcon;
 
-  const getIconSymbol = (iconName: string): string => {
-    const iconMap: { [key: string]: string } = {
-      'eye': '👁',
-      'eye-off': '🙈',
-      'person': '👤',
-      'mail': '✉️',
-      'lock-closed': '🔒',
-      'phone': '📞',
-      'search': '🔍',
-      'location': '📍',
-      'camera': '📷',
-      'image': '🖼️',
-      'add': '➕',
-      'checkmark': '✓',
-      'close': '✕',
-      'arrow-back': '←',
-      'arrow-forward': '→',
-      'heart': '♡',
-      'heart-filled': '♥',
-      'star': '☆',
-      'star-filled': '★',
-      'home': '🏠',
-      'settings': '⚙️',
-      'menu': '☰',
-      'more': '⋯'
+  const getIconComponent = (iconName: string, size: number = 18, color: string) => {
+    const icons: { [key: string]: React.ComponentType<any> } = {
+      'eye': Eye,
+      'eye-off': EyeOff,
+      'person': User,
+      'user': User,
+      'mail': Mail,
+      'email': Mail,
+      'lock': Lock,
+      'lock-closed': Lock,
+      'phone': Phone,
+      'search': Search,
+      'location': MapPin,
+      'map-pin': MapPin,
+      'camera': Camera,
+      'image': Image,
+      'add': Plus,
+      'plus': Plus,
+      'check': Check,
+      'checkmark': Check,
+      'close': X,
+      'x': X,
+      'arrow-left': ArrowLeft,
+      'arrow-back': ArrowLeft,
+      'arrow-right': ArrowRight,
+      'arrow-forward': ArrowRight,
+      'heart': Heart,
+      'star': Star,
+      'home': Home,
+      'settings': Settings,
+      'menu': Menu,
+      'more': MoreHorizontal,
+      'more-horizontal': MoreHorizontal,
     };
-    return iconMap[iconName] || '•';
+
+    const IconComponent = icons[iconName] || User;
+    return <IconComponent size={size} color={color} />;
   };
 
   return (
@@ -153,13 +164,11 @@ export const Input: React.FC<InputProps> = ({
       <View style={getInputContainerStyle()}>
         {leftIcon && (
           <View style={{ marginRight: 8, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' }}>
-            <Text style={{
-              fontSize: 18,
-              color: isFocused ? COLORS.primary.DEFAULT : COLORS.neutral.gray,
-              textAlign: 'center'
-            }}>
-              {getIconSymbol(leftIcon)}
-            </Text>
+            {getIconComponent(
+              leftIcon, 
+              18, 
+              isFocused ? COLORS.primary.DEFAULT : COLORS.neutral.gray
+            )}
           </View>
         )}
         
@@ -187,13 +196,11 @@ export const Input: React.FC<InputProps> = ({
             style={{ marginLeft: 8, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' }}
             disabled={!shouldShowPasswordToggle && !onRightIconPress}
           >
-            <Text style={{
-              fontSize: 18,
-              color: isFocused ? COLORS.primary.DEFAULT : COLORS.neutral.gray,
-              textAlign: 'center'
-            }}>
-              {getIconSymbol(finalRightIcon)}
-            </Text>
+            {getIconComponent(
+              finalRightIcon, 
+              18, 
+              isFocused ? COLORS.primary.DEFAULT : COLORS.neutral.gray
+            )}
           </TouchableOpacity>
         )}
       </View>
@@ -202,6 +209,5 @@ export const Input: React.FC<InputProps> = ({
     </View>
   );
 };
-
 
 export default Input;

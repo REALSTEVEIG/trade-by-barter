@@ -50,6 +50,7 @@
     "expo-secure-store": "~13.0.2",
     "expo-splash-screen": "^31.0.10",
     "expo-status-bar": "~1.12.1",
+    "lucide-react-native": "^0.544.0",
     "react": "18.2.0",
     "react-hook-form": "^7.51.4",
     "react-native": "0.74.5",
