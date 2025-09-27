@@ -75,7 +75,7 @@ export function ProductCard({
           
           <div className="product-card-price mb-2">
             {isSwapOnly || (!acceptsCash && acceptsSwap) ? (
-              <span className="text-secondary font-medium">Swap Only</span>
+              <span className="text-secondary font-medium">Swap</span>
             ) : acceptsCash && !acceptsSwap ? (
               price && price > 0 ? (
                 <span className="naira-symbol font-semibold">{formatNaira(price)}</span>
@@ -85,14 +85,16 @@ export function ProductCard({
             ) : acceptsCash && acceptsSwap ? (
               <div className="flex items-center gap-2">
                 {price && price > 0 ? (
-                  <span className="naira-symbol font-semibold">{formatNaira(price)}</span>
+                  <>
+                    <span className="naira-symbol font-semibold">{formatNaira(price)}</span>
+                    <span className="text-secondary text-sm">+ Swap</span>
+                  </>
                 ) : (
-                  <span className="text-neutral-gray">No price set</span>
+                  <span className="text-secondary font-medium">Swap + Cash</span>
                 )}
-                <span className="text-secondary text-sm">or Swap</span>
               </div>
             ) : (
-              <span className="text-secondary font-medium">Swap Only</span>
+              <span className="text-secondary font-medium">Swap</span>
             )}
           </div>
           
