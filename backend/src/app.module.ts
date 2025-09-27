@@ -17,6 +17,7 @@ import { WalletModule } from './wallet/wallet.module';
 import { ChatModule } from './chat/chat.module';
 import { MediaModule } from './media/media.module';
 import { AdminModule } from './admin/admin.module';
+import { LocationsModule } from './locations/locations.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -60,6 +61,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     ChatModule,
     MediaModule,
     AdminModule,
+    LocationsModule,
   ],
   controllers: [AppController],
   providers: [

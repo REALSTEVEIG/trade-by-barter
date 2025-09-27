@@ -1,11 +1,13 @@
 import { ListingsService } from './listings.service';
 import { UploadService } from './upload.service';
+import { LocationsService } from '../common/services/locations.service';
 import { CreateListingDto, UpdateListingDto, SearchListingsDto } from './dto';
 import type { ListingResponse, SearchListingsResponse, CategoryResponse, LocationResponse } from './dto';
 export declare class ListingsController {
     private readonly listingsService;
     private readonly uploadService;
-    constructor(listingsService: ListingsService, uploadService: UploadService);
+    private readonly locationsService;
+    constructor(listingsService: ListingsService, uploadService: UploadService, locationsService: LocationsService);
     getCategories(): CategoryResponse[];
     getLocations(): LocationResponse[];
     getMyListings(userId: string): Promise<ListingResponse[]>;

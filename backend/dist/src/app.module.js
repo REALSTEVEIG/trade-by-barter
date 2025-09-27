@@ -26,6 +26,7 @@ const wallet_module_1 = require("./wallet/wallet.module");
 const chat_module_1 = require("./chat/chat.module");
 const media_module_1 = require("./media/media.module");
 const admin_module_1 = require("./admin/admin.module");
+const locations_module_1 = require("./locations/locations.module");
 const jwt_auth_guard_1 = require("./auth/guards/jwt-auth.guard");
 let AppModule = class AppModule {
 };
@@ -65,6 +66,7 @@ exports.AppModule = AppModule = __decorate([
             chat_module_1.ChatModule,
             media_module_1.MediaModule,
             admin_module_1.AdminModule,
+            locations_module_1.LocationsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

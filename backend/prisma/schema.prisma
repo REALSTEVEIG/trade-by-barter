@@ -81,6 +81,7 @@ model Listing {
   condition           ItemCondition
   priceInKobo         Int?                // null for swap-only items
   isSwapOnly          Boolean             @default(false)
+  isCashOnly          Boolean             @default(false)
   acceptsCash         Boolean             @default(true)
   acceptsSwap         Boolean             @default(true)
   swapPreferences     String[]            // Array of preferred categories/items
@@ -973,22 +974,21 @@ enum ListingCategory {
   ELECTRONICS
   FASHION
   VEHICLES
-  FURNITURE
-  APPLIANCES
-  HOME_APPLIANCES
-  BOOKS
-  SPORTS
-  TOYS
-  BEAUTY
   HOME_GARDEN
-  BOOKS_EDUCATION
-  HEALTH_BEAUTY
+  BOOKS_MEDIA
   SPORTS_RECREATION
-  BABY_KIDS
-  AGRICULTURE
-  SERVICES
-  ART_CRAFTS
+  AUTOMOTIVE
+  BEAUTY_HEALTH
+  TOYS_GAMES
+  JEWELRY_ACCESSORIES
+  ARTS_CRAFTS
   MUSICAL_INSTRUMENTS
+  FOOD_BEVERAGES
+  TOOLS_EQUIPMENT
+  SERVICES
+  HOME_APPLIANCES
+  PET_SUPPLIES
+  OFFICE_SUPPLIES
   OTHER
 }
 

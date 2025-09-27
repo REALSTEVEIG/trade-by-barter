@@ -21,61 +21,53 @@ const get_user_decorator_1 = require("../auth/decorators/get-user.decorator");
 const public_decorator_1 = require("../auth/decorators/public.decorator");
 const listings_service_1 = require("./listings.service");
 const upload_service_1 = require("./upload.service");
+const locations_service_1 = require("../common/services/locations.service");
 const dto_1 = require("./dto");
+const client_1 = require("@prisma/client");
 let ListingsController = class ListingsController {
     listingsService;
     uploadService;
-    constructor(listingsService, uploadService) {
+    locationsService;
+    constructor(listingsService, uploadService, locationsService) {
         this.listingsService = listingsService;
         this.uploadService = uploadService;
+        this.locationsService = locationsService;
     }
     getCategories() {
-        return [
-            { value: 'ELECTRONICS', label: 'Electronics', description: 'Phones, laptops, gadgets', popular: true },
-            { value: 'FASHION', label: 'Fashion', description: 'Clothing, shoes, accessories', popular: true },
-            { value: 'VEHICLES', label: 'Vehicles', description: 'Cars, motorcycles, bicycles', popular: true },
-            { value: 'HOME_GARDEN', label: 'Home & Garden', description: 'Furniture, appliances, decor', popular: true },
-            { value: 'BOOKS_MEDIA', label: 'Books & Media', description: 'Books, magazines, media', popular: true },
-            { value: 'HEALTH_BEAUTY', label: 'Beauty & Health', description: 'Cosmetics, health products', popular: true },
-            { value: 'SPORTS_RECREATION', label: 'Sports & Recreation', description: 'Equipment, fitness, outdoor', popular: false },
-            { value: 'BABY_KIDS', label: 'Baby & Kids', description: 'Toys, clothing, equipment', popular: false },
-            { value: 'AUTOMOTIVE', label: 'Automotive', description: 'Car parts, accessories', popular: false },
-            { value: 'TOYS_GAMES', label: 'Toys & Games', description: 'Children toys, board games', popular: false },
-            { value: 'AGRICULTURE', label: 'Agriculture', description: 'Farm equipment, produce', popular: false },
-            { value: 'SERVICES', label: 'Services', description: 'Professional services', popular: false },
-            { value: 'ART_CRAFTS', label: 'Arts & Crafts', description: 'Handmade items, art supplies', popular: false },
-            { value: 'MUSICAL_INSTRUMENTS', label: 'Musical Instruments', description: 'Instruments, equipment', popular: false },
-            { value: 'FURNITURE', label: 'Furniture', description: 'Tables, chairs, beds', popular: false },
-            { value: 'APPLIANCES', label: 'Appliances', description: 'Kitchen, home appliances', popular: false },
-            { value: 'JEWELRY', label: 'Jewelry', description: 'Watches, rings, accessories', popular: false },
-            { value: 'FOOD_BEVERAGES', label: 'Food & Beverages', description: 'Food items, drinks', popular: false },
-            { value: 'TOOLS', label: 'Tools', description: 'Hand tools, power tools', popular: false },
-            { value: 'OTHER', label: 'Other', description: 'Miscellaneous items', popular: false },
-        ];
+        const categoryMappings = {
+            [client_1.ListingCategory.ELECTRONICS]: { label: 'Electronics', description: 'Phones, laptops, gadgets', popular: true },
+            [client_1.ListingCategory.FASHION]: { label: 'Fashion', description: 'Clothing, shoes, accessories', popular: true },
+            [client_1.ListingCategory.VEHICLES]: { label: 'Vehicles', description: 'Cars, motorcycles, bicycles', popular: true },
+            [client_1.ListingCategory.HOME_GARDEN]: { label: 'Home & Garden', description: 'Furniture, appliances, decor', popular: true },
+            [client_1.ListingCategory.BOOKS_MEDIA]: { label: 'Books & Media', description: 'Books, magazines, media', popular: true },
+            [client_1.ListingCategory.BEAUTY_HEALTH]: { label: 'Beauty & Health', description: 'Cosmetics, health products', popular: true },
+            [client_1.ListingCategory.SPORTS_RECREATION]: { label: 'Sports & Recreation', description: 'Equipment, fitness, outdoor', popular: false },
+            [client_1.ListingCategory.AUTOMOTIVE]: { label: 'Automotive', description: 'Car parts, accessories', popular: false },
+            [client_1.ListingCategory.TOYS_GAMES]: { label: 'Toys & Games', description: 'Children toys, board games', popular: false },
+            [client_1.ListingCategory.JEWELRY_ACCESSORIES]: { label: 'Jewelry & Accessories', description: 'Watches, rings, accessories', popular: false },
+            [client_1.ListingCategory.ARTS_CRAFTS]: { label: 'Arts & Crafts', description: 'Handmade items, art supplies', popular: false },
+            [client_1.ListingCategory.MUSICAL_INSTRUMENTS]: { label: 'Musical Instruments', description: 'Instruments, equipment', popular: false },
+            [client_1.ListingCategory.FOOD_BEVERAGES]: { label: 'Food & Beverages', description: 'Food items, drinks', popular: false },
+            [client_1.ListingCategory.TOOLS_EQUIPMENT]: { label: 'Tools & Equipment', description: 'Hand tools, power tools', popular: false },
+            [client_1.ListingCategory.SERVICES]: { label: 'Services', description: 'Professional services', popular: false },
+            [client_1.ListingCategory.HOME_APPLIANCES]: { label: 'Home Appliances', description: 'Kitchen, home appliances', popular: false },
+            [client_1.ListingCategory.PET_SUPPLIES]: { label: 'Pet Supplies', description: 'Pet food, toys, accessories', popular: false },
+            [client_1.ListingCategory.OFFICE_SUPPLIES]: { label: 'Office Supplies', description: 'Stationery, office equipment', popular: false },
+            [client_1.ListingCategory.OTHER]: { label: 'Other', description: 'Miscellaneous items', popular: false },
+        };
+        return Object.entries(categoryMappings).map(([value, config]) => ({
+            value: value,
+            label: config.label,
+            description: config.description,
+            popular: config.popular,
+        }));
     }
     getLocations() {
-        return [
-            { state: 'Lagos', cities: ['Ikeja', 'Victoria Island', 'Lekki', 'Surulere', 'Ikorodu', 'Alimosho'] },
-            { state: 'Abuja (FCT)', cities: ['Garki', 'Wuse', 'Maitama', 'Asokoro', 'Gwarinpa', 'Kubwa'] },
-            { state: 'Kano', cities: ['Kano Municipal', 'Fagge', 'Dala', 'Gwale', 'Nasarawa', 'Tarauni'] },
-            { state: 'Oyo', cities: ['Ibadan', 'Ogbomoso', 'Oyo', 'Iseyin', 'Iwo', 'Saki'] },
-            { state: 'Rivers', cities: ['Port Harcourt', 'Obio-Akpor', 'Okrika', 'Eleme', 'Ikwerre', 'Gokana'] },
-            { state: 'Kaduna', cities: ['Kaduna North', 'Kaduna South', 'Chikun', 'Igabi', 'Ikara', 'Jaba'] },
-            { state: 'Ogun', cities: ['Abeokuta North', 'Abeokuta South', 'Sagamu', 'Ijebu Ode', 'Ota', 'Ilaro'] },
-            { state: 'Plateau', cities: ['Jos North', 'Jos South', 'Jos East', 'Barkin Ladi', 'Riyom', 'Bokkos'] },
-            { state: 'Anambra', cities: ['Awka', 'Onitsha', 'Nnewi', 'Ihiala', 'Aguata', 'Anambra East'] },
-            { state: 'Imo', cities: ['Owerri Municipal', 'Owerri North', 'Owerri West', 'Okigwe', 'Orlu', 'Orsu'] },
-            { state: 'Enugu', cities: ['Enugu East', 'Enugu North', 'Enugu South', 'Nsukka', 'Udi', 'Awgu'] },
-            { state: 'Abia', cities: ['Umuahia', 'Aba North', 'Aba South', 'Arochukwu', 'Bende', 'Ikwuano'] },
-            { state: 'Akwa Ibom', cities: ['Uyo', 'Ikot Ekpene', 'Eket', 'Oron', 'Abak', 'Etinan'] },
-            { state: 'Bayelsa', cities: ['Yenagoa', 'Sagbama', 'Kolokuma/Opokuma', 'Ogbia', 'Nembe', 'Brass'] },
-            { state: 'Cross River', cities: ['Calabar Municipal', 'Calabar South', 'Ikom', 'Ogoja', 'Obudu', 'Akamkpa'] },
-            { state: 'Delta', cities: ['Warri', 'Asaba', 'Sapele', 'Ughelli', 'Agbor', 'Abraka'] },
-            { state: 'Edo', cities: ['Benin City', 'Auchi', 'Ekpoma', 'Uromi', 'Ubiaja', 'Igarra'] },
-            { state: 'Osun', cities: ['Osogbo', 'Ile-Ife', 'Ilesa', 'Ede', 'Iwo', 'Ikire'] },
-            { state: 'Ondo', cities: ['Akure', 'Ondo', 'Owo', 'Ikare', 'Okitipupa', 'Ore'] },
-            { state: 'Ekiti', cities: ['Ado-Ekiti', 'Ikole', 'Oye', 'Ijero', 'Efon', 'Ikere'] },
-        ];
+        const locations = this.locationsService.getAllLocations();
+        return Object.keys(locations).map(state => ({
+            state: this.locationsService.getDisplayStateName(state),
+            cities: locations[state].slice(0, 6)
+        }));
     }
     async getMyListings(userId) {
         return this.listingsService.getUserListings(userId, userId);
@@ -297,6 +289,7 @@ exports.ListingsController = ListingsController = __decorate([
     (0, swagger_1.ApiTags)('listings'),
     (0, common_1.Controller)('listings'),
     __metadata("design:paramtypes", [listings_service_1.ListingsService,
-        upload_service_1.UploadService])
+        upload_service_1.UploadService,
+        locations_service_1.LocationsService])
 ], ListingsController);
 //# sourceMappingURL=listings.controller.js.map
