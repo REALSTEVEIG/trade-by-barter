@@ -24,6 +24,7 @@ import {
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/hooks/useToast';
 import { COLORS, TYPOGRAPHY, SUCCESS_MESSAGES, ERROR_MESSAGES } from '@/constants';
 import { authApi } from '@/lib/api';
 import Avatar from '@/components/ui/Avatar';
@@ -32,6 +33,7 @@ import Button from '@/components/ui/Button';
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user, logout, refreshUser } = useAuth();
+  const { toast } = useToast();
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
 
   const handleLogout = () => {
@@ -81,8 +83,7 @@ const ProfileScreen: React.FC = () => {
         await updateProfilePicture(result.assets[0]);
       }
     } catch (error) {
-      console.error('Image picker error:', error);
-      Alert.alert('Error', 'Failed to open image picker');
+      toast.error('Image picker error', 'Failed to open image picker');
     }
   };
 
@@ -99,10 +100,9 @@ const ProfileScreen: React.FC = () => {
       await authApi.updateProfile(formData);
       await refreshUser();
       
-      Alert.alert('Success', SUCCESS_MESSAGES.PROFILE_UPDATED);
+      toast.success('Profile updated', SUCCESS_MESSAGES.PROFILE_UPDATED);
     } catch (error: any) {
-      console.error('Error updating profile picture:', error);
-      Alert.alert('Error', error.response?.data?.message || ERROR_MESSAGES.SERVER_ERROR);
+      toast.error('Profile update failed', error.response?.data?.message || ERROR_MESSAGES.SERVER_ERROR);
     } finally {
       setIsUpdatingAvatar(false);
     }

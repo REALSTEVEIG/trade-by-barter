@@ -33,12 +33,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const formatPrice = (listing: Listing) => {
     // Check if this is a swap-only listing
-    if (listing.isSwapOnly || (!listing.acceptsCash && listing.acceptsSwap)) {
+    if (listing.isSwapOnly) {
       return 'Swap';
     }
     
     // Cash only listing
-    if (listing.acceptsCash && !listing.acceptsSwap) {
+    if (listing.isCashOnly) {
       if (listing.price && listing.price > 0) {
         return formatNaira(listing.price);
       }

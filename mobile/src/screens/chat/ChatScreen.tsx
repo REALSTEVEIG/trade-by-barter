@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +22,7 @@ import {
 } from 'lucide-react-native';
 import { chatApi } from '@/lib/api';
 import socketService from '@/lib/socket';
+import { useToast } from '@/hooks/useToast';
 import { AppStackParamList } from '@/navigation';
 import { Message, User } from '@/types';
 import { COLORS, TYPOGRAPHY, formatTimeAgo } from '@/constants';
@@ -125,6 +125,7 @@ const TypingIndicator: React.FC<{ visible: boolean }> = ({ visible }) => {
 const ChatScreen: React.FC = () => {
   const route = useRoute<ChatRouteProp>();
   const navigation = useNavigation();
+  const { toast } = useToast();
   const { chatId, otherUserId } = route.params;
   
   const [messages, setMessages] = useState<Message[]>([]);
@@ -251,7 +252,7 @@ const ChatScreen: React.FC = () => {
         };
       }
     } catch (error) {
-      console.error('Failed to initialize socket:', error);
+      // Silent error for socket connection - not critical enough for user notification
       setIsConnected(false);
     }
   };
@@ -271,8 +272,7 @@ const ChatScreen: React.FC = () => {
         }
       }
     } catch (error: any) {
-      console.error('Error fetching messages:', error);
-      Alert.alert('Error', 'Failed to load messages');
+      toast.error('Failed to load messages', 'Please check your connection and try again');
     } finally {
       setIsLoading(false);
     }
@@ -320,7 +320,7 @@ const ChatScreen: React.FC = () => {
     } catch (error: any) {
       // Remove temp message and show error
       setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
-      Alert.alert('Error', 'Failed to send message');
+      toast.error('Failed to send message', 'Please try again');
       setMessageText(tempMessage.content);
     } finally {
       setIsSending(false);
@@ -351,7 +351,7 @@ const ChatScreen: React.FC = () => {
 
   const handleInitiateCall = async (callType: 'video' | 'audio') => {
     if (!otherUser || !isConnected) {
-      Alert.alert('Error', 'Cannot start call. Please check your connection.');
+      toast.error('Cannot start call', 'Please check your connection');
       return;
     }
     
@@ -362,8 +362,7 @@ const ChatScreen: React.FC = () => {
         ...(otherUser.avatar && { avatar: otherUser.avatar }),
       });
     } catch (err: any) {
-      console.error('Failed to initiate call:', err);
-      Alert.alert('Error', 'Failed to start call');
+      toast.error('Failed to start call', 'Please try again later');
     }
   };
 
@@ -374,8 +373,7 @@ const ChatScreen: React.FC = () => {
       await webrtcService.acceptCall();
       setIncomingCall(null);
     } catch (err: any) {
-      console.error('Failed to accept call:', err);
-      Alert.alert('Error', 'Failed to accept call');
+      toast.error('Failed to accept call', 'Please try again');
     }
   };
 

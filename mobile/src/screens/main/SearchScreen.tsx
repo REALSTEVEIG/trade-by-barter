@@ -4,13 +4,13 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Search, Frown } from 'lucide-react-native';
 import { listingsApi } from '@/lib/api';
+import { useToast } from '@/hooks/useToast';
 import { AppStackParamList } from '@/navigation';
 import { Listing } from '@/types';
 import { COLORS, TYPOGRAPHY, ERROR_MESSAGES } from '@/constants';
@@ -23,6 +23,7 @@ type SearchScreenNavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
 const SearchScreen: React.FC = () => {
   const navigation = useNavigation<SearchScreenNavigationProp>();
+  const { toast } = useToast();
   
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -57,9 +58,8 @@ const SearchScreen: React.FC = () => {
       const response = await listingsApi.searchListings(params);
       setListings(response.data as Listing[]);
     } catch (error: any) {
-      console.error('Error searching listings:', error);
-      Alert.alert(
-        'Search Error',
+      toast.error(
+        'Search failed',
         error.response?.data?.message || ERROR_MESSAGES.NETWORK
       );
     } finally {
@@ -93,9 +93,9 @@ const SearchScreen: React.FC = () => {
         )
       );
     } catch (error: any) {
-      Alert.alert(
-        'Error',
-        error.response?.data?.message || 'Failed to update favorite'
+      toast.error(
+        'Failed to update favorite',
+        error.response?.data?.message || 'Unable to update favorite status'
       );
     }
   };

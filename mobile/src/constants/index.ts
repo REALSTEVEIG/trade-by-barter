@@ -8,19 +8,23 @@ export const NIGERIAN_STATES = [
 
 export const CATEGORIES = [
   { value: 'ELECTRONICS', label: 'Electronics' },
-  { value: 'FASHION', label: 'Fashion & Clothing' },
-  { value: 'HOME_APPLIANCES', label: 'Home & Garden' },
-  { value: 'BOOKS', label: 'Books & Media' },
-  { value: 'SPORTS', label: 'Sports & Recreation' },
+  { value: 'FASHION', label: 'Fashion' },
+  { value: 'VEHICLES', label: 'Vehicles' },
+  { value: 'HOME_GARDEN', label: 'Home & Garden' },
+  { value: 'BOOKS_MEDIA', label: 'Books & Media' },
+  { value: 'SPORTS_RECREATION', label: 'Sports & Recreation' },
   { value: 'AUTOMOTIVE', label: 'Automotive' },
-  { value: 'BEAUTY', label: 'Beauty & Health' },
-  { value: 'TOYS', label: 'Toys & Games' },
-  { value: 'JEWELRY', label: 'Jewelry & Accessories' },
+  { value: 'BEAUTY_HEALTH', label: 'Beauty & Health' },
+  { value: 'TOYS_GAMES', label: 'Toys & Games' },
+  { value: 'JEWELRY_ACCESSORIES', label: 'Jewelry & Accessories' },
   { value: 'ARTS_CRAFTS', label: 'Arts & Crafts' },
-  { value: 'MUSIC', label: 'Musical Instruments' },
+  { value: 'MUSICAL_INSTRUMENTS', label: 'Musical Instruments' },
   { value: 'FOOD_BEVERAGES', label: 'Food & Beverages' },
-  { value: 'TOOLS', label: 'Tools & Equipment' },
+  { value: 'TOOLS_EQUIPMENT', label: 'Tools & Equipment' },
   { value: 'SERVICES', label: 'Services' },
+  { value: 'HOME_APPLIANCES', label: 'Home Appliances' },
+  { value: 'PET_SUPPLIES', label: 'Pet Supplies' },
+  { value: 'OFFICE_SUPPLIES', label: 'Office Supplies' },
   { value: 'OTHER', label: 'Other' }
 ];
 
@@ -38,18 +42,18 @@ export const PRODUCT_CONDITIONS = [
 export const TRADE_OPTIONS = [
   {
     value: 'swap',
-    label: 'Trade Only',
-    description: 'I only want to exchange this item for something else'
+    label: 'Swap only',
+    description: 'Trade for other items only'
   },
   {
     value: 'cash',
-    label: 'Sell Only',
-    description: 'I only want to sell this item for cash'
+    label: 'Cash only',
+    description: 'Sell for money only'
   },
   {
     value: 'both',
-    label: 'Trade or Sell',
-    description: 'I am open to both trading and selling this item'
+    label: 'Both',
+    description: 'Open to cash or trade'
   }
 ];
 

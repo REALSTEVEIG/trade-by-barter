@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Alert,
   TextInput,
   KeyboardAvoidingView,
   Platform,
@@ -50,6 +49,7 @@ interface CreateListingFormData {
   acceptsCash: boolean;
   acceptsSwap: boolean;
   isSwapOnly: boolean;
+  isCashOnly: boolean;
   swapPreferences: string;
   images: { uri: string; type: string; name: string }[];
 }
@@ -78,6 +78,7 @@ const CreateListingScreen: React.FC = () => {
     acceptsCash: true,
     acceptsSwap: true,
     isSwapOnly: false,
+    isCashOnly: false,
     swapPreferences: '',
     images: []
   });
@@ -93,15 +94,21 @@ const CreateListingScreen: React.FC = () => {
       return;
     }
 
-    Alert.alert(
-      'Select Image',
-      'Choose how you want to add a photo',
-      [
-        { text: 'Camera', onPress: () => openImagePicker('camera') },
-        { text: 'Gallery', onPress: () => openImagePicker('library') },
-        { text: 'Cancel', style: 'cancel' }
-      ]
-    );
+    showToast({
+      type: 'info',
+      title: 'Select Image Source',
+      message: 'Choose Camera or Gallery to add a photo',
+      duration: 4000,
+      action: {
+        label: 'Camera',
+        onPress: () => openImagePicker('camera'),
+      },
+    });
+    
+    // Also add a gallery option - for now we'll use camera as fallback
+    setTimeout(() => {
+      openImagePicker('library');
+    }, 100);
   };
 
   const openImagePicker = async (source: 'camera' | 'library') => {
@@ -153,6 +160,7 @@ const CreateListingScreen: React.FC = () => {
           acceptsCash: false,
           acceptsSwap: true,
           isSwapOnly: true,
+          isCashOnly: false,
         }));
         break;
       case 'cash':
@@ -161,6 +169,7 @@ const CreateListingScreen: React.FC = () => {
           acceptsCash: true,
           acceptsSwap: false,
           isSwapOnly: false,
+          isCashOnly: true,
         }));
         break;
       case 'both':
@@ -170,15 +179,16 @@ const CreateListingScreen: React.FC = () => {
           acceptsCash: true,
           acceptsSwap: true,
           isSwapOnly: false,
+          isCashOnly: false,
         }));
         break;
     }
   };
 
   const getCurrentTradeType = (): string => {
-    if (formData.isSwapOnly && formData.acceptsSwap && !formData.acceptsCash) {
+    if (formData.isSwapOnly) {
       return 'swap';
-    } else if (formData.acceptsCash && !formData.acceptsSwap) {
+    } else if (formData.isCashOnly) {
       return 'cash';
     } else {
       return 'both';
@@ -260,6 +270,7 @@ const CreateListingScreen: React.FC = () => {
       formDataToSend.append('acceptsCash', formData.acceptsCash.toString());
       formDataToSend.append('acceptsSwap', formData.acceptsSwap.toString());
       formDataToSend.append('isSwapOnly', formData.isSwapOnly.toString());
+      formDataToSend.append('isCashOnly', formData.isCashOnly.toString());
       
       if (formData.swapPreferences) {
         formDataToSend.append('swapPreferences', JSON.stringify([formData.swapPreferences]));

@@ -19,6 +19,7 @@ import {
   Package
 } from 'lucide-react-native';
 import { COLORS, TYPOGRAPHY } from '@/constants';
+import { useToast } from '@/hooks/useToast';
 import Avatar from '@/components/ui/Avatar';
 
 interface ProfileModalProps {
@@ -61,13 +62,14 @@ interface UserProfile {
   }>;
 }
 
-export function ProfileModal({ 
-  isVisible, 
-  onClose, 
-  userId, 
-  onStartCall, 
-  onSendMessage 
+export function ProfileModal({
+  isVisible,
+  onClose,
+  userId,
+  onStartCall,
+  onSendMessage
 }: ProfileModalProps) {
+  const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -138,8 +140,9 @@ export function ProfileModal({
 
       setProfile(mockProfile);
     } catch (err: any) {
-      console.error('Failed to fetch profile:', err);
-      setError('Failed to load profile');
+      const errorMessage = 'Failed to load profile';
+      setError(errorMessage);
+      toast.error('Profile Error', errorMessage);
     } finally {
       setLoading(false);
     }

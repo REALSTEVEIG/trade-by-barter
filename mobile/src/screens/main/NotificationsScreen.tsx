@@ -20,19 +20,21 @@ import {
   AlertCircle
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
-import { 
-  COLORS, 
-  TYPOGRAPHY, 
-  SPACING, 
+import {
+  COLORS,
+  TYPOGRAPHY,
+  SPACING,
   formatTimeAgo,
-  ERROR_MESSAGES 
+  ERROR_MESSAGES
 } from '@/constants';
+import { useToast } from '@/hooks/useToast';
 import { Notification } from '@/types';
 import { notificationsApi } from '@/lib/api';
 import Button from '@/components/ui/Button';
 
 const NotificationsScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -49,8 +51,9 @@ const NotificationsScreen: React.FC = () => {
       const response = await notificationsApi.getNotifications();
       setNotifications(response.data as Notification[]);
     } catch (error: any) {
-      console.error('Error loading notifications:', error);
-      setError(error.response?.data?.message || ERROR_MESSAGES.SERVER_ERROR);
+      const errorMessage = error.response?.data?.message || ERROR_MESSAGES.SERVER_ERROR;
+      setError(errorMessage);
+      toast.error('Failed to load notifications', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -76,19 +79,18 @@ const NotificationsScreen: React.FC = () => {
         )
       );
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      // Silent error for mark as read - not critical enough for user notification
     }
   };
 
   const markAllAsRead = async () => {
     try {
       await notificationsApi.markAllAsRead();
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(notification => ({ ...notification, isRead: true }))
       );
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-      Alert.alert('Error', 'Failed to mark notifications as read');
+      toast.error('Failed to mark notifications as read', 'Please try again later');
     }
   };
 
@@ -106,8 +108,7 @@ const NotificationsScreen: React.FC = () => {
               await notificationsApi.deleteNotification(notificationId);
               setNotifications(prev => prev.filter(n => n.id !== notificationId));
             } catch (error) {
-              console.error('Error deleting notification:', error);
-              Alert.alert('Error', 'Failed to delete notification');
+              toast.error('Failed to delete notification', 'Please try again later');
             }
           }
         }

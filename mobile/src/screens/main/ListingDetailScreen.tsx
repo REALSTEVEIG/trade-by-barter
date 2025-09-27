@@ -30,15 +30,16 @@ import {
   Users
 } from 'lucide-react-native';
 import { AppStackParamList } from '@/navigation';
-import { 
-  COLORS, 
-  TYPOGRAPHY, 
-  SPACING, 
-  formatNaira, 
+import {
+  COLORS,
+  TYPOGRAPHY,
+  SPACING,
+  formatNaira,
   formatTimeAgo,
   ERROR_MESSAGES,
-  SUCCESS_MESSAGES 
+  SUCCESS_MESSAGES
 } from '@/constants';
+import { useToast } from '@/hooks/useToast';
 import { listingsApi } from '@/lib/api';
 import Button from '@/components/ui/Button';
 
@@ -77,6 +78,7 @@ const { width: screenWidth } = Dimensions.get('window');
 const ListingDetailScreen: React.FC = () => {
   const route = useRoute<ListingDetailRouteProp>();
   const navigation = useNavigation();
+  const { toast } = useToast();
   const { listingId } = route.params;
   
   const [listing, setListing] = useState<Listing | null>(null);
@@ -96,8 +98,9 @@ const ListingDetailScreen: React.FC = () => {
       const response = await listingsApi.getListing(listingId);
       setListing(response.data as Listing);
     } catch (error: any) {
-      console.error('Error fetching listing:', error);
-      setError(error.response?.data?.message || ERROR_MESSAGES.NOT_FOUND);
+      const errorMessage = error.response?.data?.message || ERROR_MESSAGES.NOT_FOUND;
+      setError(errorMessage);
+      toast.error('Failed to load listing', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -110,7 +113,7 @@ const ListingDetailScreen: React.FC = () => {
       await listingsApi.toggleFavorite(listing.id);
       setListing(prev => prev ? { ...prev, isFavorited: !prev.isFavorited } : null);
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      toast.error('Failed to update favorite', 'Please try again later');
     }
   };
 
@@ -123,7 +126,7 @@ const ListingDetailScreen: React.FC = () => {
         title: listing.title,
       });
     } catch (error) {
-      console.error('Error sharing:', error);
+      toast.error('Failed to share', 'Unable to share this listing');
     }
   };
 
@@ -142,12 +145,10 @@ const ListingDetailScreen: React.FC = () => {
             try {
               setIsDeleting(true);
               await listingsApi.deleteListing(listing.id);
-              Alert.alert('Success', SUCCESS_MESSAGES.LISTING_DELETED, [
-                { text: 'OK', onPress: () => navigation.goBack() }
-              ]);
+              toast.success('Listing deleted', SUCCESS_MESSAGES.LISTING_DELETED);
+              navigation.goBack();
             } catch (error: any) {
-              console.error('Error deleting listing:', error);
-              Alert.alert('Error', error.response?.data?.message || ERROR_MESSAGES.SERVER_ERROR);
+              toast.error('Failed to delete listing', error.response?.data?.message || ERROR_MESSAGES.SERVER_ERROR);
             } finally {
               setIsDeleting(false);
             }

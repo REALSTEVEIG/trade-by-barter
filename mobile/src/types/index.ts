@@ -95,6 +95,7 @@ export interface Listing {
   specificLocation?: string;
   price?: number | null; // Price in kobo
   isSwapOnly: boolean;
+  isCashOnly?: boolean;
   acceptsCash: boolean;
   acceptsSwap: boolean;
   swapPreferences?: string[];

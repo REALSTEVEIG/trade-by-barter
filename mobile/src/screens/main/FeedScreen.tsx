@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   RefreshControl,
-  Alert,
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +13,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Wallet, List, User, Grid } from 'lucide-react-native';
 import { listingsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/hooks/useToast';
 import { AppStackParamList } from '@/navigation';
 import { Listing } from '@/types';
 import { COLORS, TYPOGRAPHY, ERROR_MESSAGES } from '@/constants';
@@ -27,6 +27,7 @@ type FeedScreenNavigationProp = NativeStackNavigationProp<AppStackParamList>;
 const FeedScreen: React.FC = () => {
   const navigation = useNavigation<FeedScreenNavigationProp>();
   const { user } = useAuth();
+  const { toast } = useToast();
   
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,7 +54,8 @@ const FeedScreen: React.FC = () => {
         limit: 20,
       };
 
-      if (selectedCategory) {
+      // Only apply category filter when not showing "My Listings"
+      if (selectedCategory && !showMyListings) {
         params.category = selectedCategory;
       }
 
@@ -91,13 +93,12 @@ const FeedScreen: React.FC = () => {
       setHasNextPage((newListings || []).length === 20);
       setCurrentPage(page);
     } catch (error: any) {
-      console.error('Error fetching listings:', error);
       // Ensure listings is always an array even on error
       if (page === 1) {
         setListings([]);
       }
-      Alert.alert(
-        'Error',
+      toast.error(
+        'Failed to load listings',
         error.response?.data?.message || ERROR_MESSAGES.NETWORK
       );
     } finally {
@@ -164,9 +165,9 @@ const FeedScreen: React.FC = () => {
         )
       );
     } catch (error: any) {
-      Alert.alert(
-        'Error',
-        error.response?.data?.message || 'Failed to update favorite'
+      toast.error(
+        'Failed to update favorite',
+        error.response?.data?.message || 'Unable to update favorite status'
       );
     }
   };

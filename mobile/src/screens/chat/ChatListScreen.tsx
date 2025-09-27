@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +13,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MessageSquare, CloudOff } from 'lucide-react-native';
 import { chatApi } from '@/lib/api';
 import socketService from '@/lib/socket';
+import { useToast } from '@/hooks/useToast';
 import { AppStackParamList } from '@/navigation';
 import { Chat } from '@/types';
 import { COLORS, TYPOGRAPHY, ERROR_MESSAGES } from '@/constants';
@@ -24,6 +24,7 @@ type ChatListScreenNavigationProp = NativeStackNavigationProp<AppStackParamList>
 
 const ChatListScreen: React.FC = () => {
   const navigation = useNavigation<ChatListScreenNavigationProp>();
+  const { toast } = useToast();
   
   const [chats, setChats] = useState<Chat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,7 +76,7 @@ const ChatListScreen: React.FC = () => {
         };
       }
     } catch (error) {
-      console.error('Failed to initialize socket:', error);
+      // Silent error for socket connection - not critical enough for user notification
       setIsConnected(false);
     }
   };
@@ -116,10 +117,9 @@ const ChatListScreen: React.FC = () => {
       const response = await chatApi.getChats();
       setChats(response.data as Chat[]);
     } catch (error: any) {
-      console.error('Error fetching chats:', error);
       if (!isRefresh) {
-        Alert.alert(
-          'Error',
+        toast.error(
+          'Failed to load conversations',
           error.response?.data?.message || ERROR_MESSAGES.NETWORK
         );
       }

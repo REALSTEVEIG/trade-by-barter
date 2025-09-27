@@ -13,6 +13,7 @@ import { Bell, User, Plus, Grid3X3 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, TYPOGRAPHY } from '@/constants';
+import { useToast } from '@/hooks/useToast';
 import { Listing } from '@/types';
 import { ProductCard, SearchBar, CategoryFilter } from '@/components/common';
 import { Button, Loading } from '@/components/ui';
@@ -59,6 +60,7 @@ const mockListings: Listing[] = [
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { toast } = useToast();
   const [listings, setListings] = useState<Listing[]>(mockListings);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -76,7 +78,7 @@ export const HomeScreen: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       setListings(mockListings);
     } catch (error) {
-      console.error('Error loading listings:', error);
+      toast.error('Failed to load listings', 'Please try again later');
     } finally {
       setIsLoading(false);
     }
