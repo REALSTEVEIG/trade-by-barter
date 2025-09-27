@@ -16,6 +16,7 @@ export interface ProductCardProps {
   onFavoriteToggle?: (id: string) => void;
   className?: string;
   isSwapOnly?: boolean;
+  isCashOnly?: boolean;
   acceptsCash?: boolean;
   acceptsSwap?: boolean;
 }
@@ -31,6 +32,7 @@ export function ProductCard({
   onFavoriteToggle,
   className,
   isSwapOnly = false,
+  isCashOnly = false,
   acceptsCash = true,
   acceptsSwap = true,
 }: ProductCardProps): React.ReactElement {
@@ -74,9 +76,9 @@ export function ProductCard({
           </h3>
           
           <div className="product-card-price mb-2">
-            {isSwapOnly || (!acceptsCash && acceptsSwap) ? (
+            {isSwapOnly ? (
               <span className="text-secondary font-medium">Swap</span>
-            ) : acceptsCash && !acceptsSwap ? (
+            ) : isCashOnly ? (
               price && price > 0 ? (
                 <span className="naira-symbol font-semibold">{formatNaira(price)}</span>
               ) : (

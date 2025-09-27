@@ -9,6 +9,7 @@ import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import ProductCard from '@/components/common/product-card';
 import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/hooks/use-toast';
 import { listingsApi } from '@/lib/api';
 import { Listing } from '@/types';
 import { cn, NIGERIAN_STATES } from '@/lib/utils';
@@ -18,18 +19,22 @@ const categories = [
   { name: 'All Categories', slug: 'all' },
   { name: 'Electronics', slug: 'ELECTRONICS' },
   { name: 'Fashion', slug: 'FASHION' },
-  { name: 'Home & Garden', slug: 'HOME_APPLIANCES' },
-  { name: 'Books & Media', slug: 'BOOKS' },
-  { name: 'Sports & Recreation', slug: 'SPORTS' },
+  { name: 'Vehicles', slug: 'VEHICLES' },
+  { name: 'Home & Garden', slug: 'HOME_GARDEN' },
+  { name: 'Books & Media', slug: 'BOOKS_MEDIA' },
+  { name: 'Sports & Recreation', slug: 'SPORTS_RECREATION' },
   { name: 'Automotive', slug: 'AUTOMOTIVE' },
-  { name: 'Beauty & Health', slug: 'BEAUTY' },
-  { name: 'Toys & Games', slug: 'TOYS' },
-  { name: 'Jewelry & Accessories', slug: 'JEWELRY' },
+  { name: 'Beauty & Health', slug: 'BEAUTY_HEALTH' },
+  { name: 'Toys & Games', slug: 'TOYS_GAMES' },
+  { name: 'Jewelry & Accessories', slug: 'JEWELRY_ACCESSORIES' },
   { name: 'Arts & Crafts', slug: 'ARTS_CRAFTS' },
-  { name: 'Musical Instruments', slug: 'MUSIC' },
+  { name: 'Musical Instruments', slug: 'MUSICAL_INSTRUMENTS' },
   { name: 'Food & Beverages', slug: 'FOOD_BEVERAGES' },
-  { name: 'Tools & Equipment', slug: 'TOOLS' },
+  { name: 'Tools & Equipment', slug: 'TOOLS_EQUIPMENT' },
   { name: 'Services', slug: 'SERVICES' },
+  { name: 'Home Appliances', slug: 'HOME_APPLIANCES' },
+  { name: 'Pet Supplies', slug: 'PET_SUPPLIES' },
+  { name: 'Office Supplies', slug: 'OFFICE_SUPPLIES' },
   { name: 'Other', slug: 'OTHER' },
 ];
 
@@ -43,6 +48,7 @@ const sortOptions = [
 
 export default function FeedPage(): React.ReactElement {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [listings, setListings] = React.useState<Listing[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -76,8 +82,8 @@ export default function FeedPage(): React.ReactElement {
       const params = {
         page: reset ? 1 : page,
         limit: 20,
-        ...(selectedCategory !== 'all' && { category: selectedCategory }),
-        ...(selectedLocation && { location: selectedLocation }),
+        ...(selectedCategory !== 'all' && !showMyListings && { category: selectedCategory }),
+        ...(selectedLocation && !showMyListings && { location: selectedLocation }),
         ...(searchQuery && { query: searchQuery }),
         ...(showMyListings && user && { userId: user.id }),
         sortBy: sortBy,
@@ -100,8 +106,9 @@ export default function FeedPage(): React.ReactElement {
       setTotalCount((responseData as any).pagination?.total || 0);
       setHasMore((responseData as any).pagination?.hasNext || false);
     } catch (err: any) {
-      console.error('Fetch listings error:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to load listings');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load listings';
+      setError(errorMessage);
+      toast.error('Failed to load listings', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -144,8 +151,8 @@ export default function FeedPage(): React.ReactElement {
           ? { ...listing, isFavorite: !listing.isFavorite }
           : listing
       ));
-    } catch (err) {
-      console.error('Failed to toggle favorite:', err);
+    } catch (err: any) {
+      toast.error('Failed to update favorite', err.response?.data?.message || err.message);
     }
   };
 
@@ -186,19 +193,21 @@ export default function FeedPage(): React.ReactElement {
         </div>
         {/* Filters Section */}
         <div className="mb-8">
-          {/* Category Pills */}
-          <div className="flex items-center gap-4 mb-6 overflow-x-auto pb-2">
-            {categories.map((category) => (
-              <Badge
-                key={category.slug}
-                variant={selectedCategory === category.slug ? 'category-active' : 'category-inactive'}
-                className="cursor-pointer whitespace-nowrap"
-                onClick={() => handleCategoryChange(category.slug)}
-              >
-                {category.name}
-              </Badge>
-            ))}
-          </div>
+          {/* Category Pills - Hide when showing My Listings */}
+          {!showMyListings && (
+            <div className="flex items-center gap-4 mb-6 overflow-x-auto pb-2">
+              {categories.map((category) => (
+                <Badge
+                  key={category.slug}
+                  variant={selectedCategory === category.slug ? 'category-active' : 'category-inactive'}
+                  className="cursor-pointer whitespace-nowrap"
+                  onClick={() => handleCategoryChange(category.slug)}
+                >
+                  {category.name}
+                </Badge>
+              ))}
+            </div>
+          )}
 
           {/* Filters and View Toggle */}
           <div className="flex items-center justify-between gap-4">
@@ -224,19 +233,21 @@ export default function FeedPage(): React.ReactElement {
                 Filters
               </Button>
 
-              {/* Location Filter */}
-              <select
-                value={selectedLocation}
-                onChange={(e) => handleLocationChange(e.target.value)}
-                className="input-field text-sm"
-              >
-                <option value="">All Locations</option>
-                {NIGERIAN_STATES.map((state) => (
-                  <option key={state} value={state}>
-                    {state}
-                  </option>
-                ))}
-              </select>
+              {/* Location Filter - Hide when showing My Listings */}
+              {!showMyListings && (
+                <select
+                  value={selectedLocation}
+                  onChange={(e) => handleLocationChange(e.target.value)}
+                  className="input-field text-sm"
+                >
+                  <option value="">All Locations</option>
+                  {NIGERIAN_STATES.map((state) => (
+                    <option key={state} value={state}>
+                      {state}
+                    </option>
+                  ))}
+                </select>
+              )}
 
               {/* Sort Options */}
               <select
@@ -321,6 +332,7 @@ export default function FeedPage(): React.ReactElement {
                   onFavoriteToggle={handleFavoriteToggle}
                   className={viewMode === 'list' ? 'flex' : ''}
                   isSwapOnly={listing.isSwapOnly}
+                  isCashOnly={listing.isCashOnly}
                   acceptsCash={listing.acceptsCash}
                   acceptsSwap={listing.acceptsSwap}
                 />
@@ -358,6 +370,7 @@ export default function FeedPage(): React.ReactElement {
                 setSelectedLocation('');
                 setSearchQuery('');
                 setShowMyListings(false);
+                setSortBy('newest');
               }}>
                 Clear Filters
               </Button>

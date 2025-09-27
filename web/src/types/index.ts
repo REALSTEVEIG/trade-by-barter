@@ -24,6 +24,7 @@ export interface Listing {
   condition: string;
   price?: number | null; // Price in kobo (for cash/hybrid trades)
   isSwapOnly: boolean;
+  isCashOnly: boolean;
   acceptsCash: boolean;
   acceptsSwap: boolean;
   swapPreferences: string[];
