@@ -9,9 +9,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/auth-context';
-import { authApi } from '@/lib/api';
+import { authApi, listingsApi } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { formatNaira } from '@/lib/utils';
+import { formatNaira, formatCategory } from '@/lib/utils';
 
 interface UserProfile {
   id: string;
@@ -30,7 +30,7 @@ interface UserListing {
   id: string;
   title: string;
   category: string;
-  price: number;
+  price: number | null;
   images: string[];
   status: string;
   createdAt: string;
@@ -70,21 +70,17 @@ export default function ProfilePage(): React.ReactElement {
 
     try {
       setIsLoadingListings(true);
-      // Use the my-listings endpoint for user's own listings
-      const response = await fetch('/api/v1/listings/my-listings', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        },
+      // Use the same pattern as feed page for user listings
+      const response = await listingsApi.getListings({
+        page: 1,
+        limit: 20,
+        userId: user.id,
+        sortBy: 'newest'
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch listings');
-      }
-      
-      const data = await response.json();
-      setListings(data.data || []);
+      // Handle the response structure from backend
+      const responseData = response.data || response;
+      setListings((responseData as any).listings || []);
     } catch (error: any) {
       toast.error('Error', 'Failed to load your listings');
       setListings([]);
@@ -274,7 +270,7 @@ export default function ProfilePage(): React.ReactElement {
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <Badge variant="secondary" className="text-xs mb-1">
-                            {listing.category}
+                            {formatCategory(listing.category)}
                           </Badge>
                           <h3 className="font-semibold text-gray-900 mb-1">
                             {listing.title}

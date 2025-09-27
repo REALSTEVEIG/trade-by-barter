@@ -16,9 +16,17 @@ export function formatCurrency(amount: number, currency = 'NGN'): string {
   return formatter.format(amount);
 }
 
-export function formatNaira(kobo: number): string {
+export function formatNaira(kobo: number | null | undefined): string {
+  if (kobo == null || isNaN(kobo) || kobo === 0) {
+    return '₦0';
+  }
   const naira = kobo / 100;
   return `₦${naira.toLocaleString('en-NG')}`;
+}
+
+export function formatCategory(category: string): string {
+  const categoryMap = CATEGORIES.find(cat => cat.value === category);
+  return categoryMap?.label || category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
 export function formatPhoneNumber(phone: string): string {
