@@ -97,7 +97,8 @@ const ListingDetailScreen: React.FC = () => {
     try {
       setIsLoading(true);
       const response = await listingsApi.getListing(listingId);
-      setListing(response.data as Listing);
+      const listingData = (response.data || response) as Listing;
+      setListing(listingData);
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || ERROR_MESSAGES.NOT_FOUND;
       setError(errorMessage);

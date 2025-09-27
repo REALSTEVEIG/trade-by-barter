@@ -451,7 +451,20 @@ const ProfileScreen: React.FC = () => {
                       </View>
                       <TouchableOpacity
                         style={styles.viewButton}
-                        onPress={() => navigation.navigate('ListingDetail' as any, { id: listing.id })}
+                        onPress={() => {                          
+                          if (!listing.id) {
+                            showToast({
+                              type: 'error',
+                              title: 'Error',
+                              message: 'Cannot view listing details - invalid listing ID',
+                              duration: 3000,
+                            });
+                            return;
+                          }
+                          
+                          // Fix: Use listingId instead of id to match navigation parameter
+                          navigation.navigate('ListingDetail' as any, { listingId: listing.id });
+                        }}
                       >
                         <Eye size={16} color={COLORS.primary.DEFAULT} />
                         <Text style={styles.viewButtonText}>View</Text>

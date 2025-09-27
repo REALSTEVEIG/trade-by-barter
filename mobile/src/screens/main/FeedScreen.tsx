@@ -151,6 +151,10 @@ const FeedScreen: React.FC = () => {
   };
 
   const handleListingPress = (listing: Listing) => {
+    if (!listing.id) {
+      return;
+    }
+    
     navigation.navigate('ListingDetail', { listingId: listing.id });
   };
 

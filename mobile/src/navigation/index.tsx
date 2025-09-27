@@ -168,10 +168,10 @@ function AppNavigator() {
         component={MainTabNavigator}
         options={{ headerShown: false }}
       />
-      <AppStack.Screen 
-        name="ListingDetail" 
+      <AppStack.Screen
+        name="ListingDetail"
         component={ListingDetailScreen}
-        options={{ title: 'Listing Details' }}
+        options={{ headerShown: false }}
       />
       <AppStack.Screen 
         name="Chat" 
