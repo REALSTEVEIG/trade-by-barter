@@ -324,4 +324,19 @@ export const notificationsApi = {
   },
 };
 
+// Locations API
+export const locationsApi = {
+  getStates: async () => {
+    return apiClient.get('/locations/states');
+  },
+
+  getCities: async (state: string) => {
+    return apiClient.get(`/locations/cities/${encodeURIComponent(state)}`);
+  },
+
+  getAllLocations: async () => {
+    return apiClient.get('/locations');
+  },
+};
+
 export default api;

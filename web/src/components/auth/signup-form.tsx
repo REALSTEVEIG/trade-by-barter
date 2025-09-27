@@ -10,15 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/auth-context';
 import { useNotification } from '@/contexts/notification-context';
+import { locationsApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
-
-const NIGERIAN_STATES = [
-  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
-  'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo',
-  'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
-  'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers',
-  'Sokoto', 'Taraba', 'Yobe', 'Zamfara', 'FCT'
-];
 
 const signupSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters').max(50, 'First name must not exceed 50 characters'),
@@ -32,8 +25,8 @@ const signupSchema = z.object({
     .min(8, 'Password must be at least 8 characters long')
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
   confirmPassword: z.string(),
-  state: z.string().min(1, 'Please select a state').refine(state => NIGERIAN_STATES.includes(state), 'Please select a valid Nigerian state'),
-  city: z.string().min(2, 'City must be at least 2 characters long').max(100, 'City must not exceed 100 characters'),
+  state: z.string().min(1, 'Please select a state'),
+  city: z.string().min(1, 'Please select a city'),
   displayName: z.string().max(30, 'Display name must not exceed 30 characters').optional(),
   address: z.string().max(255, 'Address must not exceed 255 characters').optional(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -56,6 +49,11 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
   const [passwordValue, setPasswordValue] = React.useState('');
   const [phoneValue, setPhoneValue] = React.useState('');
   const [confirmPasswordValue, setConfirmPasswordValue] = React.useState('');
+  const [states, setStates] = React.useState<string[]>([]);
+  const [cities, setCities] = React.useState<string[]>([]);
+  const [selectedState, setSelectedState] = React.useState('');
+  const [isLoadingStates, setIsLoadingStates] = React.useState(false);
+  const [isLoadingCities, setIsLoadingCities] = React.useState(false);
 
   const {
     register,
@@ -71,6 +69,7 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
   const watchedPassword = watch('password', '');
   const watchedConfirmPassword = watch('confirmPassword', '');
   const watchedPhone = watch('phoneNumber', '');
+  const watchedState = watch('state', '');
 
   React.useEffect(() => {
     setPasswordValue(watchedPassword || '');
@@ -83,6 +82,59 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
   React.useEffect(() => {
     setPhoneValue(watchedPhone || '');
   }, [watchedPhone]);
+
+  React.useEffect(() => {
+    setSelectedState(watchedState || '');
+  }, [watchedState]);
+
+  // Load states on component mount
+  React.useEffect(() => {
+    const loadStates = async () => {
+      setIsLoadingStates(true);
+      try {
+        const response = await locationsApi.getStates();
+        setStates((response as any).states);
+      } catch (error) {
+        addNotification({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to load states. Please refresh the page.',
+          duration: 4000,
+        });
+      } finally {
+        setIsLoadingStates(false);
+      }
+    };
+    
+    loadStates();
+  }, [addNotification]);
+
+  // Load cities when state changes
+  React.useEffect(() => {
+    if (selectedState) {
+      const loadCities = async () => {
+        setIsLoadingCities(true);
+        setCities([]);
+        try {
+          const response = await locationsApi.getCities(selectedState);
+          setCities((response as any).cities);
+        } catch (error) {
+          addNotification({
+            type: 'error',
+            title: 'Error',
+            message: 'Failed to load cities for selected state.',
+            duration: 4000,
+          });
+        } finally {
+          setIsLoadingCities(false);
+        }
+      };
+      
+      loadCities();
+    } else {
+      setCities([]);
+    }
+  }, [selectedState, addNotification]);
 
   // Password validation helpers
   const getPasswordValidation = (password: string) => {
@@ -293,9 +345,12 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
               errors.state && "border-red-500"
             )}
             {...register('state')}
+            disabled={isLoadingStates}
           >
-            <option value="">Select your state</option>
-            {NIGERIAN_STATES.map((state) => (
+            <option value="">
+              {isLoadingStates ? 'Loading states...' : 'Select your state'}
+            </option>
+            {states.map((state) => (
               <option key={state} value={state}>
                 {state}
               </option>
@@ -307,13 +362,34 @@ export function SignupForm({ className, onSuccess }: SignupFormProps): React.Rea
         </div>
 
         <div>
-          <Input
-            label="City"
-            type="text"
-            placeholder="Enter your city"
-            {...(errors.city?.message && { error: errors.city.message })}
+          <label className="block text-sm font-medium text-neutral-dark mb-1">
+            City <span className="text-red-500">*</span>
+          </label>
+          <select
+            className={cn(
+              "w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+              errors.city && "border-red-500"
+            )}
             {...register('city')}
-          />
+            disabled={!selectedState || isLoadingCities}
+          >
+            <option value="">
+              {!selectedState
+                ? 'Select a state first'
+                : isLoadingCities
+                ? 'Loading cities...'
+                : 'Select your city'
+              }
+            </option>
+            {cities.map((city) => (
+              <option key={city} value={city}>
+                {city}
+              </option>
+            ))}
+          </select>
+          {errors.city && (
+            <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>
+          )}
         </div>
 
         <div>

@@ -7,8 +7,8 @@ import { Camera, ArrowLeft, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { listingsApi } from '@/lib/api';
-import { CATEGORIES, PRODUCT_CONDITIONS, NIGERIAN_STATES } from '@/lib/utils';
+import { listingsApi, locationsApi } from '@/lib/api';
+import { CATEGORIES, PRODUCT_CONDITIONS } from '@/lib/utils';
 import { useAuth, withAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 
@@ -58,6 +58,10 @@ function CreateListingPageComponent(): React.ReactElement {
   });
 
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [states, setStates] = useState<string[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [isLoadingStates, setIsLoadingStates] = useState(false);
+  const [isLoadingCities, setIsLoadingCities] = useState(false);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -83,7 +87,52 @@ function CreateListingPageComponent(): React.ReactElement {
 
   const handleInputChange = (field: keyof CreateListingFormData, value: string | number | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Reset city when state changes
+    if (field === 'state') {
+      setFormData(prev => ({ ...prev, city: '' }));
+      setCities([]);
+    }
   };
+
+  // Load states on component mount
+  React.useEffect(() => {
+    const loadStates = async () => {
+      setIsLoadingStates(true);
+      try {
+        const response = await locationsApi.getStates();
+        setStates((response as any).states);
+      } catch (error) {
+        toast.error('Error', 'Failed to load states. Please refresh the page.');
+      } finally {
+        setIsLoadingStates(false);
+      }
+    };
+    
+    loadStates();
+  }, []);
+
+  // Load cities when state changes
+  React.useEffect(() => {
+    if (formData.state) {
+      const loadCities = async () => {
+        setIsLoadingCities(true);
+        setCities([]);
+        try {
+          const response = await locationsApi.getCities(formData.state);
+          setCities((response as any).cities);
+        } catch (error) {
+          toast.error('Error', 'Failed to load cities for selected state.');
+        } finally {
+          setIsLoadingCities(false);
+        }
+      };
+      
+      loadCities();
+    } else {
+      setCities([]);
+    }
+  }, [formData.state]);
 
   const handleTradeTypeChange = (tradeType: string) => {
     switch (tradeType) {
@@ -375,10 +424,13 @@ function CreateListingPageComponent(): React.ReactElement {
                     value={formData.state}
                     onChange={(e) => handleInputChange('state', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none"
+                    disabled={isLoadingStates}
                     required
                   >
-                    <option value="">Select state</option>
-                    {NIGERIAN_STATES.map((state: string) => (
+                    <option value="">
+                      {isLoadingStates ? 'Loading states...' : 'Select state'}
+                    </option>
+                    {states.map((state: string) => (
                       <option key={state} value={state}>{state}</option>
                     ))}
                   </select>
@@ -391,12 +443,28 @@ function CreateListingPageComponent(): React.ReactElement {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 City *
               </label>
-              <Input
-                value={formData.city}
-                onChange={(e) => handleInputChange('city', e.target.value)}
-                placeholder="Enter your city"
-                required
-              />
+              <div className="relative">
+                <select
+                  value={formData.city}
+                  onChange={(e) => handleInputChange('city', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none"
+                  disabled={!formData.state || isLoadingCities}
+                  required
+                >
+                  <option value="">
+                    {!formData.state
+                      ? 'Select a state first'
+                      : isLoadingCities
+                      ? 'Loading cities...'
+                      : 'Select your city'
+                    }
+                  </option>
+                  {cities.map((city: string) => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
             </div>
 
             <div>

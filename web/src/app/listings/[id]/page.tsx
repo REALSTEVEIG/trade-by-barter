@@ -69,7 +69,7 @@ export default function ListingDetailPage(): React.ReactElement {
       try {
         setIsLoading(true);
         const response = await listingsApi.getListing(id as string);
-        setListing(response.data as Listing);
+        setListing((response.data || response) as Listing);
       } catch (error: any) {
         const errorMessage = error.response?.data?.message || 'Failed to load listing';
         setError(errorMessage);

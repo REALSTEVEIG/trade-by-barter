@@ -5,6 +5,7 @@ import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Notification } from '@/types/notification';
 import { Button } from './button';
+import { useNotification } from '@/contexts/notification-context';
 
 interface NotificationToastProps {
   notification: Notification;
@@ -133,13 +134,21 @@ export function NotificationToast({ notification, onClose }: NotificationToastPr
 }
 
 export function NotificationContainer() {
+  const { notifications, removeNotification } = useNotification();
+
   return (
     <div
       className="fixed top-4 right-4 z-50 flex flex-col space-y-2 max-w-sm w-full"
       aria-live="polite"
       aria-label="Notifications"
     >
-      <div id="notification-portal" />
+      {notifications.map((notification: Notification) => (
+        <NotificationToast
+          key={notification.id}
+          notification={notification}
+          onClose={removeNotification}
+        />
+      ))}
     </div>
   );
 }

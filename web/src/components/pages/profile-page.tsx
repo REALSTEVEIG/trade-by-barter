@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/auth-context';
-import { listingsApi, authApi } from '@/lib/api';
+import { authApi } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { formatNaira } from '@/lib/utils';
 
@@ -70,25 +70,21 @@ export default function ProfilePage(): React.ReactElement {
 
     try {
       setIsLoadingListings(true);
-      // Use the correct parameter structure for getting user's own listings
-      const response = await listingsApi.getListings({
-        page: 1,
-        limit: 50,
-        userId: user.id
+      // Use the my-listings endpoint for user's own listings
+      const response = await fetch('/api/v1/listings/my-listings', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+        },
       });
       
-      // Handle different response structures
-      let listingsData = [];
-      const responseData = response.data as any;
-      if (responseData?.listings) {
-        listingsData = responseData.listings;
-      } else if (Array.isArray(responseData)) {
-        listingsData = responseData;
-      } else if (Array.isArray(response)) {
-        listingsData = response as any;
+      if (!response.ok) {
+        throw new Error('Failed to fetch listings');
       }
       
-      setListings(listingsData || []);
+      const data = await response.json();
+      setListings(data.data || []);
     } catch (error: any) {
       toast.error('Error', 'Failed to load your listings');
       setListings([]);
@@ -167,26 +163,33 @@ export default function ProfilePage(): React.ReactElement {
           </p>
 
           <div className="flex items-center justify-center gap-1 mb-6">
-            {renderStars(profile?.rating || 4.8)}
+            {renderStars(profile?.rating || 0)}
             <span className="ml-2 text-sm text-gray-600">
-              {profile?.rating || 4.8} ({profile?.reviewCount || 125} reviews)
+              {profile?.rating || 0} ({profile?.reviewCount || 0} reviews)
             </span>
           </div>
 
-          <div className="flex gap-3 justify-center">
+          <div className="flex gap-2 justify-center flex-wrap">
+            <Button
+              variant="outline"
+              onClick={() => router.push('/wallet')}
+              className="flex-1 max-w-28"
+            >
+              Wallet
+            </Button>
             <Button
               variant="outline"
               onClick={() => router.push('/profile/edit')}
-              className="flex-1 max-w-32"
+              className="flex-1 max-w-28"
             >
               Edit profile
             </Button>
             <Button
               variant="outline"
               onClick={() => router.push('/profile/verification')}
-              className="flex-1 max-w-40"
+              className="flex-1 max-w-32"
             >
-              Request verification
+              Verification
             </Button>
           </div>
           
@@ -353,11 +356,11 @@ export default function ProfilePage(): React.ReactElement {
             <span className="text-xs">Home</span>
           </button>
           <button
-            onClick={() => router.push('/listings/create')}
+            onClick={() => setActiveTab('listings')}
             className="flex flex-col items-center py-2 px-3 text-gray-600 hover:text-primary-600 transition-colors"
           >
             <FileText className="w-6 h-6 mb-1" />
-            <span className="text-xs">Listings</span>
+            <span className="text-xs">My Listings</span>
           </button>
           <button
             onClick={() => router.push('/chat')}

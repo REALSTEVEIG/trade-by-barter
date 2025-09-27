@@ -4,7 +4,6 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/auth-context";
 import { NotificationProvider } from "@/contexts/notification-context";
 import { NotificationContainer } from "@/components/ui/notification";
-import { NotificationManager } from "@/components/ui/notification-manager";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -94,7 +93,6 @@ export default function RootLayout({
           <AuthProvider>
             {children}
             <NotificationContainer />
-            <NotificationManager />
           </AuthProvider>
         </NotificationProvider>
       </body>
