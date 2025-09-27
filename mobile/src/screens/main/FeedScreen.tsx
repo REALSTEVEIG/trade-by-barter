@@ -52,6 +52,7 @@ const FeedScreen: React.FC = () => {
       const params: Record<string, any> = {
         page,
         limit: 20,
+        sortBy: 'newest'
       };
 
       // Only apply category filter when not showing "My Listings"
@@ -65,21 +66,21 @@ const FeedScreen: React.FC = () => {
 
       if (showMyListings && user?.id) {
         params.userId = user.id;
-      } else if (!showMyListings && user?.id) {
-        // For "All Listings", exclude user's own listings
-        params.excludeUserId = user.id;
       }
-
       const response = await listingsApi.getListings(params);
-      
-      // Mobile API client returns paginated response directly
-      const responseData = response as any;
+
+      // Handle the correct backend response structure: { listings: [...], pagination: {...} }
+      const responseData = response.data || response;
       let newListings: Listing[] = [];
       
-      if (Array.isArray(responseData.data)) {
-        newListings = responseData.data as Listing[];
+      // Backend returns SearchListingsResponse with { listings: [...], pagination: {...} }
+      if (responseData && typeof responseData === 'object' && 'listings' in responseData && Array.isArray((responseData as any).listings)) {
+        newListings = (responseData as any).listings as Listing[];
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && Array.isArray((responseData as any).data)) {
+        newListings = (responseData as any).data as Listing[];
       } else if (Array.isArray(responseData)) {
         newListings = responseData as Listing[];
+      } else {
       }
 
       if (page === 1) {
@@ -90,6 +91,7 @@ const FeedScreen: React.FC = () => {
 
       setHasNextPage((newListings || []).length === 20);
       setCurrentPage(page);
+            
     } catch (error: any) {
       // Ensure listings is always an array even on error
       if (page === 1) {

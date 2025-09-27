@@ -11,6 +11,7 @@ import {
 import { ImageIcon, Heart, MapPin } from 'lucide-react-native';
 import { Listing } from '@/types';
 import { COLORS, TYPOGRAPHY } from '@/constants';
+import { formatNaira } from '@/lib/utils';
 import Card from '@/components/ui/Card';
 
 export interface ProductCardProps {
@@ -27,10 +28,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onFavorite,
   variant = 'grid',
 }) => {
-  const formatNaira = (priceInKobo: number): string => {
-    return `₦${(priceInKobo / 100).toLocaleString()}`;
-  };
-
   const formatPrice = (listing: Listing) => {
     // Check if this is a swap-only listing
     if (listing.isSwapOnly) {

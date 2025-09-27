@@ -22,22 +22,10 @@ import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/contexts/toast-context';
 import { COLORS, TYPOGRAPHY, SUCCESS_MESSAGES, ERROR_MESSAGES } from '@/constants';
 import { authApi, listingsApi } from '@/lib/api';
+import { formatNaira, formatCategory } from '@/lib/utils';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
-
-interface UserProfile {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  location?: string;
-  avatar?: string;
-  rating: number;
-  reviewCount: number;
-  isVerified: boolean;
-}
 
 interface UserListing {
   id: string;
@@ -55,45 +43,67 @@ type TabType = 'listings' | 'trades' | 'reviews';
 
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { user, logout, refreshUser } = useAuth();
+  const { user, logout, refreshUser, isLoading: authLoading, isAuthenticated } = useAuth();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('listings');
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [listings, setListings] = useState<UserListing[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
 
+  // Load listings when user becomes available
   useEffect(() => {
-    loadProfile();
-    loadListings();
-  }, []);
-
-  const loadProfile = async () => {
-    try {
-      const response = await authApi.getProfile();
-      setProfile(response.data as UserProfile);
-    } catch (error: any) {
-      showToast({
-        type: 'error',
-        title: 'Error',
-        message: 'Failed to load profile data',
-        duration: 3000,
+    if (user?.id && isAuthenticated) {
+      loadListings();
+    } else if (isAuthenticated && !user?.id) {
+      // If authenticated but user data is missing, try to refresh it
+      refreshUser().then(() => {
+      }).catch(err => {
+        console.log('error', err);
       });
+    } else {
     }
-  };
+  }, [user?.id, isAuthenticated]);
+
+  // Additional effect to handle when user data becomes available after refresh
+  useEffect(() => {
+    if (user?.id && isAuthenticated && listings.length === 0 && !isLoadingListings) {
+      loadListings();
+    }
+  }, [user?.id]);
+
+  // Remove the separate loadProfile function since we're using auth context
 
   const loadListings = async () => {
-    if (!user?.id) {
-      setIsLoading(false);
+    if (!user?.id || !isAuthenticated) {
       return;
     }
 
     try {
-      setIsLoadingListings(true);
-      // Use the API client with userId parameter
-      const response = await listingsApi.getListings({ userId: user.id });
-      setListings((response.data as UserListing[]) || []);
+      setIsLoadingListings(true);      
+      // Use the same pattern as web feed page for user listings
+      const response = await listingsApi.getListings({
+        page: 1,
+        limit: 20,
+        userId: user.id,
+        sortBy: 'newest'
+      });
+      
+      // Handle the correct backend response structure: { listings: [...], pagination: {...} }
+      const responseData = response.data || response;
+      let listings: UserListing[] = [];
+      
+      // Backend returns SearchListingsResponse with { listings: [...], pagination: {...} }
+      if (responseData && typeof responseData === 'object' && 'listings' in responseData && Array.isArray((responseData as any).listings)) {
+        listings = (responseData as any).listings as UserListing[];
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData && Array.isArray((responseData as any).data)) {
+        listings = (responseData as any).data as UserListing[];
+      } else if (Array.isArray(responseData)) {
+        listings = responseData as UserListing[];
+      } else {
+        listings = [];
+      }
+      
+      setListings(listings);
     } catch (error: any) {
       showToast({
         type: 'error',
@@ -103,7 +113,6 @@ const ProfileScreen: React.FC = () => {
       });
       setListings([]);
     } finally {
-      setIsLoading(false);
       setIsLoadingListings(false);
     }
   };
@@ -221,17 +230,37 @@ const ProfileScreen: React.FC = () => {
     ));
   };
 
-  const formatNaira = (amount: number) => {
-    return `₦${(amount / 100).toLocaleString()}`;
-  };
 
   const displayListings = listings || [];
 
-  if (isLoading) {
+  if (authLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading profile...</Text>
+          <Text style={styles.debugText}>Auth loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Handle case where user is not authenticated
+  if (!isAuthenticated || !user?.id) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.emptyTitle}>Profile Unavailable</Text>
+          <Text style={styles.emptySubtitle}>Please log in to view your profile</Text>
+          <Text style={styles.debugText}>
+            Authenticated: {isAuthenticated ? 'Yes' : 'No'}, User ID: {user?.id || 'undefined'}
+          </Text>
+          <Button
+            title="Refresh"
+            onPress={() => refreshUser()}
+            variant="primary"
+            size="sm"
+            style={styles.createButton}
+          />
         </View>
       </SafeAreaView>
     );
@@ -261,7 +290,7 @@ const ProfileScreen: React.FC = () => {
                   <Camera size={16} color="white" />
                 )}
               </View>
-              {(profile?.isVerified || user?.isVerified) && (
+              {user?.isVerified && (
                 <View style={styles.verifiedBadge}>
                   <CheckCircle size={20} color={COLORS.primary.DEFAULT} />
                 </View>
@@ -269,12 +298,12 @@ const ProfileScreen: React.FC = () => {
             </TouchableOpacity>
 
             <Text style={styles.name}>
-              {profile?.firstName || user?.firstName} {profile?.lastName || user?.lastName}
+              {user?.firstName} {user?.lastName}
             </Text>
             
             <Text style={styles.location}>
               {(() => {
-                const location = profile?.location || user?.location;
+                const location = user?.location;
                 if (typeof location === 'string') {
                   return location;
                 } else if (location && typeof location === 'object' && 'state' in location) {
@@ -286,10 +315,10 @@ const ProfileScreen: React.FC = () => {
 
             <View style={styles.ratingContainer}>
               <View style={styles.starsContainer}>
-                {renderStars(profile?.rating || 0)}
+                {renderStars(user?.rating || 0)}
               </View>
               <Text style={styles.ratingText}>
-                {profile?.rating || 0} ({profile?.reviewCount || 0} reviews)
+                {user?.rating || 0} ({user?.totalTrades || 0} trades)
               </Text>
             </View>
 
@@ -411,7 +440,7 @@ const ProfileScreen: React.FC = () => {
                       </View>
                       <View style={styles.listingDetails}>
                         <View style={styles.categoryBadge}>
-                          <Text style={styles.categoryText}>{listing.category}</Text>
+                          <Text style={styles.categoryText}>{formatCategory(listing.category)}</Text>
                         </View>
                         <Text style={styles.listingTitle} numberOfLines={2}>
                           {listing.title}
@@ -706,6 +735,12 @@ const styles = StyleSheet.create({
   },
   createButton: {
     minWidth: 150,
+  },
+  debugText: {
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: COLORS.neutral.gray,
+    fontFamily: TYPOGRAPHY.fontFamily.inter,
+    marginTop: 8,
   },
 });
 

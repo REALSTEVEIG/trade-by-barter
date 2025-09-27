@@ -58,7 +58,6 @@ class SocketService {
         this.auth = { token, userId: user.id };
         console.log('Socket auth initialized successfully with user:', user.id);
       } else {
-        console.warn('No token or user data found for socket authentication');
         this.auth = null;
       }
     } catch (error) {

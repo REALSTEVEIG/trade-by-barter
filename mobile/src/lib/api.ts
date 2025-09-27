@@ -37,6 +37,7 @@ api.interceptors.request.use(
     const token = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
     }
     return config;
   },

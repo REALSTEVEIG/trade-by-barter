@@ -17,51 +17,13 @@ import { useToast } from '@/hooks/useToast';
 import { Listing } from '@/types';
 import { ProductCard, SearchBar, CategoryFilter } from '@/components/common';
 import { Button, Loading } from '@/components/ui';
+import { listingsApi } from '@/lib/api';
 
-// Mock data - would come from API
-const mockListings: Listing[] = [
-  {
-    id: '1',
-    title: 'Wireless Headphones',
-    description: 'High-quality wireless headphones in excellent condition',
-    category: 'ELECTRONICS',
-    condition: 'like-new',
-    images: ['https://example.com/headphones.jpg'],
-    user: {
-      id: '1',
-      email: 'user@example.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      isVerified: true,
-      isEmailVerified: true,
-      isPhoneVerified: true,
-      rating: 4.8,
-      totalTrades: 25,
-      joinedAt: '2024-01-01',
-      lastSeen: '2024-07-01',
-    },
-    userId: '1',
-    city: 'Ikeja',
-    state: 'Lagos',
-    price: 1500000, // 15,000 Naira in kobo
-    isSwapOnly: false,
-    acceptsCash: true,
-    acceptsSwap: true,
-    status: 'ACTIVE',
-    tags: ['audio', 'bluetooth'],
-    views: 45,
-    favoritesCount: 8,
-    isFavorited: false,
-    createdAt: '2024-07-01',
-    updatedAt: '2024-07-01',
-  },
-  // Add more mock listings...
-];
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation();
   const { toast } = useToast();
-  const [listings, setListings] = useState<Listing[]>(mockListings);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -73,12 +35,26 @@ export const HomeScreen: React.FC = () => {
 
   const loadFeaturedListings = async () => {
     setIsLoading(true);
-    try {
-      // API call would go here
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      setListings(mockListings);
-    } catch (error) {
-      toast.error('Failed to load listings', 'Please try again later');
+    
+    try {            
+      // Make actual API call to get listings
+      const response = await listingsApi.getListings({
+        page: 1,
+        limit: 20,
+        sortBy: 'newest'
+      });
+
+      // Handle the response structure from backend
+      const responseData = response.data || response;
+      const listings = (responseData as any).listings || [];
+      
+      setListings(listings);      
+    } catch (error: any) {
+      // Try to show a user-friendly error
+      const errorMessage = error.response?.data?.message || error.message || 'Network connection failed';
+      toast.error('Failed to load listings', errorMessage);
+      setListings([]);
+      
     } finally {
       setIsLoading(false);
     }
