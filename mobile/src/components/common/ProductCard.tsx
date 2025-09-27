@@ -34,7 +34,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const formatPrice = (listing: Listing) => {
     // Check if this is a swap-only listing
     if (listing.isSwapOnly || (!listing.acceptsCash && listing.acceptsSwap)) {
-      return 'Swap Only';
+      return 'Swap';
     }
     
     // Cash only listing
@@ -48,13 +48,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     // Both cash and swap accepted
     if (listing.acceptsCash && listing.acceptsSwap) {
       if (listing.price && listing.price > 0) {
-        return `${formatNaira(listing.price)} or Swap`;
+        return `${formatNaira(listing.price)} + Swap`;
       }
-      return 'No price set or Swap';
+      return 'Swap + Cash';
     }
     
     // Default fallback
-    return 'Swap Only';
+    return 'Swap';
   };
 
   const getImageSource = () => {

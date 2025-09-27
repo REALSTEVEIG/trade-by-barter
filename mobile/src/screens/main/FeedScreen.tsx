@@ -63,10 +63,24 @@ const FeedScreen: React.FC = () => {
 
       if (showMyListings && user?.id) {
         params.userId = user.id;
+      } else if (!showMyListings && user?.id) {
+        // For "All Listings", exclude user's own listings
+        params.excludeUserId = user.id;
       }
 
       const response = await listingsApi.getListings(params);
-      const newListings = response.data as Listing[];
+      
+      // Handle different API response structures
+      let newListings: Listing[] = [];
+      const responseData = response.data as any;
+      
+      if (responseData?.listings) {
+        newListings = responseData.listings as Listing[];
+      } else if (Array.isArray(responseData)) {
+        newListings = responseData as Listing[];
+      } else if (Array.isArray(response)) {
+        newListings = response as Listing[];
+      }
 
       if (page === 1) {
         setListings(newListings || []);
@@ -192,11 +206,13 @@ const FeedScreen: React.FC = () => {
         style={styles.searchBar}
       />
 
-      <CategoryFilter
-        selectedCategory={selectedCategory}
-        onCategorySelect={handleCategorySelect}
-        style={styles.categoryFilter}
-      />
+      {!showMyListings && (
+        <CategoryFilter
+          selectedCategory={selectedCategory}
+          onCategorySelect={handleCategorySelect}
+          style={styles.categoryFilter}
+        />
+      )}
 
       <View style={styles.filterRow}>
         <TouchableOpacity
