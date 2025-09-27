@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -33,7 +33,7 @@ import {
   SUCCESS_MESSAGES,
   ERROR_MESSAGES
 } from '@/constants';
-import { listingsApi } from '@/lib/api';
+import { listingsApi, locationsApi } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/contexts/toast-context';
 
@@ -66,6 +66,10 @@ const CreateListingScreen: React.FC = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showConditionModal, setShowConditionModal] = useState(false);
   const [showStateModal, setShowStateModal] = useState(false);
+  const [showCityModal, setShowCityModal] = useState(false);
+  const [states, setStates] = useState<string[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [formData, setFormData] = useState<CreateListingFormData>({
     title: '',
     description: '',
@@ -82,6 +86,57 @@ const CreateListingScreen: React.FC = () => {
     swapPreferences: '',
     images: []
   });
+
+  // Load states on component mount
+  useEffect(() => {
+    loadStates();
+  }, []);
+
+  // Load cities when state changes
+  useEffect(() => {
+    if (formData.state) {
+      loadCities(formData.state);
+    } else {
+      setCities([]);
+      setFormData(prev => ({ ...prev, city: '' }));
+    }
+  }, [formData.state]);
+
+  const loadStates = async () => {
+    setIsLoading(true);
+    try {
+      const response = await locationsApi.getStates();
+      setStates((response.data as any).states || []);
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: 'Failed to load states',
+        message: 'Using fallback state list',
+        duration: 3000,
+      });
+      setStates(NIGERIAN_STATES); // Fallback to constants
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadCities = async (state: string) => {
+    setIsLoadingCities(true);
+    try {
+      const response = await locationsApi.getCitiesByState(state);
+      setCities((response.data as any).cities || []);
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: 'Failed to load cities',
+        message: 'Please enter your city manually',
+        duration: 3000,
+      });
+      setCities([]);
+    } finally {
+      setIsLoadingCities(false);
+    }
+  };
 
   const handleImagePicker = async () => {
     if (formData.images.length >= 6) {
@@ -149,7 +204,16 @@ const CreateListingScreen: React.FC = () => {
   };
 
   const handleInputChange = (field: keyof CreateListingFormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      
+      // If state changes, clear city
+      if (field === 'state' && value !== prev.state) {
+        newData.city = '';
+      }
+      
+      return newData;
+    });
   };
 
   const handleTradeTypeChange = (tradeType: string) => {
@@ -521,13 +585,57 @@ const CreateListingScreen: React.FC = () => {
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>City *</Text>
-              <TextInput
-                style={styles.textInput}
-                value={formData.city}
-                onChangeText={(text) => handleInputChange('city', text)}
-                placeholder="Enter your city"
-                placeholderTextColor={COLORS.neutral.gray}
-              />
+              <TouchableOpacity
+                style={styles.dropdownButton}
+                onPress={() => {
+                  if (!formData.state) {
+                    showToast({
+                      type: 'warning',
+                      title: 'Select State First',
+                      message: 'Please select a state before choosing a city',
+                      duration: 3000,
+                    });
+                    return;
+                  }
+                  if (cities.length === 0 && !isLoadingCities) {
+                    showToast({
+                      type: 'info',
+                      title: 'No Cities Available',
+                      message: 'Enter your city manually below',
+                      duration: 3000,
+                    });
+                    return;
+                  }
+                  setShowCityModal(true);
+                }}
+                disabled={!formData.state || isLoadingCities}
+              >
+                <Text style={[
+                  styles.dropdownText,
+                  !formData.city && styles.dropdownPlaceholder,
+                  (!formData.state || isLoadingCities) && styles.dropdownDisabled
+                ]}>
+                  {isLoadingCities
+                    ? 'Loading cities...'
+                    : formData.city || 'Select city'
+                  }
+                </Text>
+                <ChevronDown
+                  size={20}
+                  color={(!formData.state || isLoadingCities) ? COLORS.neutral.gray : COLORS.neutral.dark}
+                />
+              </TouchableOpacity>
+              
+              {/* Manual city input fallback */}
+              {formData.state && cities.length === 0 && !isLoadingCities && (
+                <TextInput
+                  style={[styles.textInput, { marginTop: 8 }]}
+                  value={formData.city}
+                  onChangeText={(text) => handleInputChange('city', text)}
+                  placeholder="Enter your city manually"
+                  placeholderTextColor={COLORS.neutral.gray}
+                />
+              )}
             </View>
 
             <View style={styles.inputGroup}>
@@ -617,12 +725,21 @@ const CreateListingScreen: React.FC = () => {
         />
 
         <CustomDropdown
-          items={NIGERIAN_STATES.map(state => ({ label: state, value: state }))}
+          items={states.map(state => ({ label: state, value: state }))}
           selectedValue={formData.state}
           onValueChange={(value) => handleInputChange('state', value)}
           placeholder="State"
           isVisible={showStateModal}
           onClose={() => setShowStateModal(false)}
+        />
+
+        <CustomDropdown
+          items={cities.map(city => ({ label: city, value: city }))}
+          selectedValue={formData.city}
+          onValueChange={(value) => handleInputChange('city', value)}
+          placeholder="City"
+          isVisible={showCityModal}
+          onClose={() => setShowCityModal(false)}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -766,6 +883,9 @@ const styles = StyleSheet.create({
   },
   dropdownPlaceholder: {
     color: COLORS.neutral.gray,
+  },
+  dropdownDisabled: {
+    opacity: 0.5,
   },
   modalOverlay: {
     flex: 1,

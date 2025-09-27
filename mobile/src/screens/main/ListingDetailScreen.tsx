@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Alert,
   Share,
   Dimensions,
   Modal,
@@ -39,7 +38,8 @@ import {
   ERROR_MESSAGES,
   SUCCESS_MESSAGES
 } from '@/constants';
-import { useToast } from '@/hooks/useToast';
+import { useToast } from '@/contexts/toast-context';
+import { useAuth } from '@/contexts/auth-context';
 import { listingsApi } from '@/lib/api';
 import Button from '@/components/ui/Button';
 
@@ -78,7 +78,8 @@ const { width: screenWidth } = Dimensions.get('window');
 const ListingDetailScreen: React.FC = () => {
   const route = useRoute<ListingDetailRouteProp>();
   const navigation = useNavigation();
-  const { toast } = useToast();
+  const { showToast } = useToast();
+  const { user } = useAuth();
   const { listingId } = route.params;
   
   const [listing, setListing] = useState<Listing | null>(null);
@@ -100,7 +101,12 @@ const ListingDetailScreen: React.FC = () => {
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || ERROR_MESSAGES.NOT_FOUND;
       setError(errorMessage);
-      toast.error('Failed to load listing', errorMessage);
+      showToast({
+        type: 'error',
+        title: 'Failed to load listing',
+        message: errorMessage,
+        duration: 4000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -113,7 +119,12 @@ const ListingDetailScreen: React.FC = () => {
       await listingsApi.toggleFavorite(listing.id);
       setListing(prev => prev ? { ...prev, isFavorited: !prev.isFavorited } : null);
     } catch (error) {
-      toast.error('Failed to update favorite', 'Please try again later');
+      showToast({
+        type: 'error',
+        title: 'Failed to update favorite',
+        message: 'Please try again later',
+        duration: 3000,
+      });
     }
   };
 
@@ -126,56 +137,81 @@ const ListingDetailScreen: React.FC = () => {
         title: listing.title,
       });
     } catch (error) {
-      toast.error('Failed to share', 'Unable to share this listing');
+      showToast({
+        type: 'error',
+        title: 'Failed to share',
+        message: 'Unable to share this listing',
+        duration: 3000,
+      });
     }
   };
 
   const handleDelete = async () => {
     if (!listing) return;
     
-    Alert.alert(
-      'Delete Listing',
-      'Are you sure you want to delete this listing? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setIsDeleting(true);
-              await listingsApi.deleteListing(listing.id);
-              toast.success('Listing deleted', SUCCESS_MESSAGES.LISTING_DELETED);
-              navigation.goBack();
-            } catch (error: any) {
-              toast.error('Failed to delete listing', error.response?.data?.message || ERROR_MESSAGES.SERVER_ERROR);
-            } finally {
-              setIsDeleting(false);
-            }
+    showToast({
+      type: 'warning',
+      title: 'Delete Listing',
+      message: 'Are you sure you want to delete this listing? This action cannot be undone.',
+      duration: 0,
+      action: {
+        label: 'Delete',
+        onPress: async () => {
+          try {
+            setIsDeleting(true);
+            await listingsApi.deleteListing(listing.id);
+            showToast({
+              type: 'success',
+              title: 'Listing deleted',
+              message: SUCCESS_MESSAGES.LISTING_DELETED,
+              duration: 3000,
+            });
+            navigation.goBack();
+          } catch (error: any) {
+            showToast({
+              type: 'error',
+              title: 'Failed to delete listing',
+              message: error.response?.data?.message || ERROR_MESSAGES.SERVER_ERROR,
+              duration: 4000,
+            });
+          } finally {
+            setIsDeleting(false);
           }
         }
-      ]
-    );
+      }
+    });
   };
 
   const handleEdit = () => {
     if (listing) {
-      // Navigate to edit screen (you would need to implement this)
-      Alert.alert('Coming Soon', 'Editing functionality will be available soon!');
+      showToast({
+        type: 'info',
+        title: 'Coming Soon',
+        message: 'Editing functionality will be available soon!',
+        duration: 3000,
+      });
     }
   };
 
   const handleMakeOffer = () => {
     if (listing) {
-      // Navigate to make offer screen
-      Alert.alert('Coming Soon', 'Making offers will be available soon!');
+      showToast({
+        type: 'info',
+        title: 'Coming Soon',
+        message: 'Making offers will be available soon!',
+        duration: 3000,
+      });
     }
   };
 
   const handleContact = () => {
     if (listing) {
-      // Navigate to chat with seller
-      Alert.alert('Coming Soon', 'Chat functionality will be available soon!');
+      showToast({
+        type: 'info',
+        title: 'Coming Soon',
+        message: 'Chat functionality will be available soon!',
+        duration: 3000,
+      });
     }
   };
 
@@ -301,7 +337,7 @@ const ListingDetailScreen: React.FC = () => {
     );
   }
 
-  const isOwner = true; // You would check if current user owns this listing
+  const isOwner = user?.id === listing.owner.id;
 
   return (
     <SafeAreaView style={styles.container}>

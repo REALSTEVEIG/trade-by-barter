@@ -3,20 +3,32 @@ import {
   View,
   Text,
   StyleSheet,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Wallet } from 'lucide-react-native';
 import { COLORS, TYPOGRAPHY } from '@/constants';
+import { useToast } from '@/contexts/toast-context';
 import Button from '@/components/ui/Button';
 
 const WalletScreen: React.FC = () => {
+  const { showToast } = useToast();
+
   const handleTopUp = () => {
-    Alert.alert('Coming Soon', 'Wallet top-up with Paystack will be available soon!');
+    showToast({
+      type: 'info',
+      title: 'Coming Soon',
+      message: 'Wallet top-up with Paystack will be available soon!',
+      duration: 3000,
+    });
   };
 
   const handleWithdraw = () => {
-    Alert.alert('Coming Soon', 'Wallet withdrawal will be available soon!');
+    showToast({
+      type: 'info',
+      title: 'Coming Soon',
+      message: 'Wallet withdrawal will be available soon!',
+      duration: 3000,
+    });
   };
 
   return (

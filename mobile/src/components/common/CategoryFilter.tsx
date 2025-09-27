@@ -12,18 +12,18 @@ import { COLORS, TYPOGRAPHY, PRODUCT_CATEGORIES } from '@/constants';
 export interface CategoryFilterProps {
   selectedCategory?: string;
   onCategorySelect: (category: string) => void;
-  categories?: string[];
+  categories?: Array<{ value: string; label: string }>;
   style?: ViewStyle;
 }
 
 export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   selectedCategory,
   onCategorySelect,
-  categories = PRODUCT_CATEGORIES.slice(0, 8).map(cat => cat.label), // Show first 8 categories
+  categories = PRODUCT_CATEGORIES.slice(0, 8), // Show first 8 category objects
   style,
 }) => {
-  const renderCategoryPill = (category: string, index: number) => {
-    const isSelected = selectedCategory === category;
+  const renderCategoryPill = (categoryObj: { value: string; label: string }, index: number) => {
+    const isSelected = selectedCategory === categoryObj.value;
     
     return (
       <TouchableOpacity
@@ -32,14 +32,14 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
           styles.categoryPill,
           isSelected && styles.categoryPillSelected,
         ]}
-        onPress={() => onCategorySelect(category)}
+        onPress={() => onCategorySelect(categoryObj.value)}
         activeOpacity={0.7}
       >
         <Text style={[
           styles.categoryText,
           isSelected && styles.categoryTextSelected,
         ]}>
-          {category}
+          {categoryObj.label}
         </Text>
       </TouchableOpacity>
     );

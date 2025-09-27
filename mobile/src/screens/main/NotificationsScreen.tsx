@@ -6,7 +6,6 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -27,14 +26,14 @@ import {
   formatTimeAgo,
   ERROR_MESSAGES
 } from '@/constants';
-import { useToast } from '@/hooks/useToast';
+import { useToast } from '@/contexts/toast-context';
 import { Notification } from '@/types';
 import { notificationsApi } from '@/lib/api';
 import Button from '@/components/ui/Button';
 
 const NotificationsScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { toast } = useToast();
+  const { showToast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -53,7 +52,12 @@ const NotificationsScreen: React.FC = () => {
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || ERROR_MESSAGES.SERVER_ERROR;
       setError(errorMessage);
-      toast.error('Failed to load notifications', errorMessage);
+      showToast({
+        type: 'error',
+        title: 'Failed to load notifications',
+        message: errorMessage,
+        duration: 4000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -90,30 +94,44 @@ const NotificationsScreen: React.FC = () => {
         prev.map(notification => ({ ...notification, isRead: true }))
       );
     } catch (error) {
-      toast.error('Failed to mark notifications as read', 'Please try again later');
+      showToast({
+        type: 'error',
+        title: 'Failed to mark notifications as read',
+        message: 'Please try again later',
+        duration: 3000,
+      });
     }
   };
 
   const deleteNotification = async (notificationId: string) => {
-    Alert.alert(
-      'Delete Notification',
-      'Are you sure you want to delete this notification?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await notificationsApi.deleteNotification(notificationId);
-              setNotifications(prev => prev.filter(n => n.id !== notificationId));
-            } catch (error) {
-              toast.error('Failed to delete notification', 'Please try again later');
-            }
+    showToast({
+      type: 'warning',
+      title: 'Delete Notification',
+      message: 'Are you sure you want to delete this notification?',
+      duration: 0,
+      action: {
+        label: 'Delete',
+        onPress: async () => {
+          try {
+            await notificationsApi.deleteNotification(notificationId);
+            setNotifications(prev => prev.filter(n => n.id !== notificationId));
+            showToast({
+              type: 'success',
+              title: 'Notification deleted',
+              message: 'The notification has been removed',
+              duration: 2000,
+            });
+          } catch (error) {
+            showToast({
+              type: 'error',
+              title: 'Failed to delete notification',
+              message: 'Please try again later',
+              duration: 3000,
+            });
           }
-        }
-      ]
-    );
+        },
+      },
+    });
   };
 
   const handleNotificationPress = (notification: Notification) => {

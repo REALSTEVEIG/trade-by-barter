@@ -3,16 +3,23 @@ import {
   View,
   Text,
   StyleSheet,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeftRight } from 'lucide-react-native';
 import { COLORS, TYPOGRAPHY } from '@/constants';
+import { useToast } from '@/contexts/toast-context';
 import Button from '@/components/ui/Button';
 
 const OffersScreen: React.FC = () => {
+  const { showToast } = useToast();
+
   const handleViewOffers = () => {
-    Alert.alert('Coming Soon', 'Viewing offers will be available soon!');
+    showToast({
+      type: 'info',
+      title: 'Coming Soon',
+      message: 'Viewing offers will be available soon!',
+      duration: 3000,
+    });
   };
 
   return (
