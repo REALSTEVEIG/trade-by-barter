@@ -19,20 +19,19 @@ var ListingCategoryFilter;
     ListingCategoryFilter["VEHICLES"] = "VEHICLES";
     ListingCategoryFilter["HOME_GARDEN"] = "HOME_GARDEN";
     ListingCategoryFilter["BOOKS_MEDIA"] = "BOOKS_MEDIA";
-    ListingCategoryFilter["HEALTH_BEAUTY"] = "HEALTH_BEAUTY";
+    ListingCategoryFilter["BEAUTY_HEALTH"] = "BEAUTY_HEALTH";
     ListingCategoryFilter["SPORTS_RECREATION"] = "SPORTS_RECREATION";
-    ListingCategoryFilter["BABY_KIDS"] = "BABY_KIDS";
     ListingCategoryFilter["AUTOMOTIVE"] = "AUTOMOTIVE";
     ListingCategoryFilter["TOYS_GAMES"] = "TOYS_GAMES";
-    ListingCategoryFilter["AGRICULTURE"] = "AGRICULTURE";
-    ListingCategoryFilter["SERVICES"] = "SERVICES";
-    ListingCategoryFilter["ART_CRAFTS"] = "ART_CRAFTS";
+    ListingCategoryFilter["JEWELRY_ACCESSORIES"] = "JEWELRY_ACCESSORIES";
+    ListingCategoryFilter["ARTS_CRAFTS"] = "ARTS_CRAFTS";
     ListingCategoryFilter["MUSICAL_INSTRUMENTS"] = "MUSICAL_INSTRUMENTS";
-    ListingCategoryFilter["FURNITURE"] = "FURNITURE";
-    ListingCategoryFilter["APPLIANCES"] = "APPLIANCES";
-    ListingCategoryFilter["JEWELRY"] = "JEWELRY";
     ListingCategoryFilter["FOOD_BEVERAGES"] = "FOOD_BEVERAGES";
-    ListingCategoryFilter["TOOLS"] = "TOOLS";
+    ListingCategoryFilter["TOOLS_EQUIPMENT"] = "TOOLS_EQUIPMENT";
+    ListingCategoryFilter["SERVICES"] = "SERVICES";
+    ListingCategoryFilter["HOME_APPLIANCES"] = "HOME_APPLIANCES";
+    ListingCategoryFilter["PET_SUPPLIES"] = "PET_SUPPLIES";
+    ListingCategoryFilter["OFFICE_SUPPLIES"] = "OFFICE_SUPPLIES";
     ListingCategoryFilter["OTHER"] = "OTHER";
 })(ListingCategoryFilter || (exports.ListingCategoryFilter = ListingCategoryFilter = {}));
 var TradeTypeFilter;
@@ -70,7 +69,35 @@ __decorate([
 ], SearchListingsDto.prototype, "q", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsEnum)(ListingCategoryFilter, { message: 'Invalid category' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_transformer_1.Transform)(({ value }) => {
+        if (typeof value === 'string') {
+            const categoryMap = {
+                'Electronics': 'ELECTRONICS',
+                'Fashion': 'FASHION',
+                'Vehicles': 'VEHICLES',
+                'Furniture': 'HOME_GARDEN',
+                'Home & Garden': 'HOME_GARDEN',
+                'Books & Media': 'BOOKS_MEDIA',
+                'Beauty & Health': 'BEAUTY_HEALTH',
+                'Sports & Recreation': 'SPORTS_RECREATION',
+                'Automotive': 'AUTOMOTIVE',
+                'Toys & Games': 'TOYS_GAMES',
+                'Jewelry & Accessories': 'JEWELRY_ACCESSORIES',
+                'Arts & Crafts': 'ARTS_CRAFTS',
+                'Musical Instruments': 'MUSICAL_INSTRUMENTS',
+                'Food & Beverages': 'FOOD_BEVERAGES',
+                'Tools & Equipment': 'TOOLS_EQUIPMENT',
+                'Services': 'SERVICES',
+                'Home Appliances': 'HOME_APPLIANCES',
+                'Pet Supplies': 'PET_SUPPLIES',
+                'Office Supplies': 'OFFICE_SUPPLIES',
+                'Other': 'OTHER'
+            };
+            return categoryMap[value] || value.toUpperCase().replace(/\s+/g, '_').replace(/&/g, '');
+        }
+        return value;
+    }),
     __metadata("design:type", String)
 ], SearchListingsDto.prototype, "category", void 0);
 __decorate([
@@ -120,12 +147,12 @@ __decorate([
 ], SearchListingsDto.prototype, "limit", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsUUID)(4, { message: 'userId must be a valid UUID' }),
     __metadata("design:type", String)
 ], SearchListingsDto.prototype, "userId", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsUUID)(4, { message: 'excludeUserId must be a valid UUID' }),
     __metadata("design:type", String)
 ], SearchListingsDto.prototype, "excludeUserId", void 0);
 //# sourceMappingURL=search-listings.dto.js.map

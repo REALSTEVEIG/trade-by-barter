@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.LocationsController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
+const public_decorator_1 = require("../auth/decorators/public.decorator");
 const locations_service_1 = require("../common/services/locations.service");
 let LocationsController = class LocationsController {
     locationsService;
@@ -55,6 +56,7 @@ let LocationsController = class LocationsController {
 };
 exports.LocationsController = LocationsController;
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Get)('states'),
     (0, swagger_1.ApiOperation)({ summary: 'Get all Nigerian states' }),
     (0, swagger_1.ApiResponse)({
@@ -75,6 +77,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], LocationsController.prototype, "getStates", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Get)('cities/:state'),
     (0, swagger_1.ApiOperation)({ summary: 'Get cities for a specific state' }),
     (0, swagger_1.ApiParam)({ name: 'state', description: 'State name (e.g., Lagos, Abuja, Cross River)', example: 'Lagos' }),
@@ -99,6 +102,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], LocationsController.prototype, "getCitiesByState", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Get)(),
     (0, swagger_1.ApiOperation)({ summary: 'Get all Nigerian states and their cities' }),
     (0, swagger_1.ApiResponse)({

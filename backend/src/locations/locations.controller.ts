@@ -1,5 +1,6 @@
 import { Controller, Get, Param, HttpException, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
 import { LocationsService } from '../common/services/locations.service';
 
 @ApiTags('locations')
@@ -7,6 +8,7 @@ import { LocationsService } from '../common/services/locations.service';
 export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 
+  @Public()
   @Get('states')
   @ApiOperation({ summary: 'Get all Nigerian states' })
   @ApiResponse({ 
@@ -29,6 +31,7 @@ export class LocationsController {
     };
   }
 
+  @Public()
   @Get('cities/:state')
   @ApiOperation({ summary: 'Get cities for a specific state' })
   @ApiParam({ name: 'state', description: 'State name (e.g., Lagos, Abuja, Cross River)', example: 'Lagos' })
@@ -66,6 +69,7 @@ export class LocationsController {
     };
   }
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Get all Nigerian states and their cities' })
   @ApiResponse({ 

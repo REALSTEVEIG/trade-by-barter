@@ -16,9 +16,35 @@ export class LocationsService {
 
   private loadLocations(): void {
     try {
-      const locationsPath = path.join(__dirname, '../../data/nigeria-locations.json');
-      const locationsData = fs.readFileSync(locationsPath, 'utf8');
-      this.locations = JSON.parse(locationsData);
+      // Try multiple possible paths for the locations file
+      const possiblePaths = [
+        path.join(__dirname, '../../data/nigeria-locations.json'),
+        path.join(__dirname, '../../../src/data/nigeria-locations.json'),
+        path.join(process.cwd(), 'src/data/nigeria-locations.json'),
+        path.join(process.cwd(), 'dist/data/nigeria-locations.json')
+      ];
+
+      let locationsData: string | null = null;
+      
+      for (const locationsPath of possiblePaths) {
+        try {
+          if (fs.existsSync(locationsPath)) {
+            locationsData = fs.readFileSync(locationsPath, 'utf8');
+            console.log(`Successfully loaded locations from: ${locationsPath}`);
+            break;
+          }
+        } catch (err) {
+          // Continue to next path
+          continue;
+        }
+      }
+
+      if (locationsData) {
+        this.locations = JSON.parse(locationsData);
+      } else {
+        console.error('Failed to find Nigerian locations data file in any of the expected locations');
+        this.locations = {};
+      }
     } catch (error) {
       console.error('Failed to load Nigerian locations data:', error);
       this.locations = {};

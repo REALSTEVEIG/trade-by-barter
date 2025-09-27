@@ -7,20 +7,19 @@ export enum ListingCategory {
   VEHICLES = 'VEHICLES',
   HOME_GARDEN = 'HOME_GARDEN',
   BOOKS_MEDIA = 'BOOKS_MEDIA',
-  HEALTH_BEAUTY = 'HEALTH_BEAUTY',
   SPORTS_RECREATION = 'SPORTS_RECREATION',
-  BABY_KIDS = 'BABY_KIDS',
   AUTOMOTIVE = 'AUTOMOTIVE',
+  BEAUTY_HEALTH = 'BEAUTY_HEALTH',
   TOYS_GAMES = 'TOYS_GAMES',
-  AGRICULTURE = 'AGRICULTURE',
-  SERVICES = 'SERVICES',
-  ART_CRAFTS = 'ART_CRAFTS',
+  JEWELRY_ACCESSORIES = 'JEWELRY_ACCESSORIES',
+  ARTS_CRAFTS = 'ARTS_CRAFTS',
   MUSICAL_INSTRUMENTS = 'MUSICAL_INSTRUMENTS',
-  FURNITURE = 'FURNITURE',
-  APPLIANCES = 'APPLIANCES',
-  JEWELRY = 'JEWELRY',
   FOOD_BEVERAGES = 'FOOD_BEVERAGES',
-  TOOLS = 'TOOLS',
+  TOOLS_EQUIPMENT = 'TOOLS_EQUIPMENT',
+  SERVICES = 'SERVICES',
+  HOME_APPLIANCES = 'HOME_APPLIANCES',
+  PET_SUPPLIES = 'PET_SUPPLIES',
+  OFFICE_SUPPLIES = 'OFFICE_SUPPLIES',
   OTHER = 'OTHER',
 }
 
@@ -70,22 +69,22 @@ export class CreateListingDto {
   @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
-  isSwapOnly?: boolean = false;
+  isSwapOnly?: boolean;
 
   @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
-  isCashOnly?: boolean = false;
+  isCashOnly?: boolean;
 
   @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
-  acceptsCash?: boolean = true;
+  acceptsCash?: boolean;
 
   @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
-  acceptsSwap?: boolean = true;
+  acceptsSwap?: boolean;
 
   @IsOptional()
   @Transform(({ value }) => {

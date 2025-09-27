@@ -3,8 +3,8 @@ export interface ListingOwnerResponse {
   firstName: string;
   lastName: string;
   displayName?: string | null;
-  profileImageUrl?: string | null;
-  isPhoneVerified: boolean;
+  profilePicture?: string | null;
+  verified: boolean;
   averageRating: number;
   totalReviews: number;
 }
@@ -16,7 +16,7 @@ export interface ListingResponse {
   category: string;
   subcategory?: string | null;
   condition: string;
-  price?: number; // in kobo
+  priceInKobo?: number; // in kobo
   displayPrice?: string; // formatted as "₦1,500"
   isSwapOnly: boolean;
   acceptsCash: boolean;

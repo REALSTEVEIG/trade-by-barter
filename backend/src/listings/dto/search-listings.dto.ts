@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsEnum, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsEnum, Min, Max, IsUUID } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 export enum ListingCategoryFilter {
@@ -7,20 +7,19 @@ export enum ListingCategoryFilter {
   VEHICLES = 'VEHICLES',
   HOME_GARDEN = 'HOME_GARDEN',
   BOOKS_MEDIA = 'BOOKS_MEDIA',
-  HEALTH_BEAUTY = 'HEALTH_BEAUTY',
+  BEAUTY_HEALTH = 'BEAUTY_HEALTH',
   SPORTS_RECREATION = 'SPORTS_RECREATION',
-  BABY_KIDS = 'BABY_KIDS',
   AUTOMOTIVE = 'AUTOMOTIVE',
   TOYS_GAMES = 'TOYS_GAMES',
-  AGRICULTURE = 'AGRICULTURE',
-  SERVICES = 'SERVICES',
-  ART_CRAFTS = 'ART_CRAFTS',
+  JEWELRY_ACCESSORIES = 'JEWELRY_ACCESSORIES',
+  ARTS_CRAFTS = 'ARTS_CRAFTS',
   MUSICAL_INSTRUMENTS = 'MUSICAL_INSTRUMENTS',
-  FURNITURE = 'FURNITURE',
-  APPLIANCES = 'APPLIANCES',
-  JEWELRY = 'JEWELRY',
   FOOD_BEVERAGES = 'FOOD_BEVERAGES',
-  TOOLS = 'TOOLS',
+  TOOLS_EQUIPMENT = 'TOOLS_EQUIPMENT',
+  SERVICES = 'SERVICES',
+  HOME_APPLIANCES = 'HOME_APPLIANCES',
+  PET_SUPPLIES = 'PET_SUPPLIES',
+  OFFICE_SUPPLIES = 'OFFICE_SUPPLIES',
   OTHER = 'OTHER',
 }
 
@@ -44,8 +43,37 @@ export class SearchListingsDto {
   q?: string; // search query
 
   @IsOptional()
-  @IsEnum(ListingCategoryFilter, { message: 'Invalid category' })
-  category?: ListingCategoryFilter;
+  @IsString()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      const categoryMap: Record<string, string> = {
+        'Electronics': 'ELECTRONICS',
+        'Fashion': 'FASHION',
+        'Vehicles': 'VEHICLES',
+        'Furniture': 'HOME_GARDEN',
+        'Home & Garden': 'HOME_GARDEN',
+        'Books & Media': 'BOOKS_MEDIA',
+        'Beauty & Health': 'BEAUTY_HEALTH',
+        'Sports & Recreation': 'SPORTS_RECREATION',
+        'Automotive': 'AUTOMOTIVE',
+        'Toys & Games': 'TOYS_GAMES',
+        'Jewelry & Accessories': 'JEWELRY_ACCESSORIES',
+        'Arts & Crafts': 'ARTS_CRAFTS',
+        'Musical Instruments': 'MUSICAL_INSTRUMENTS',
+        'Food & Beverages': 'FOOD_BEVERAGES',
+        'Tools & Equipment': 'TOOLS_EQUIPMENT',
+        'Services': 'SERVICES',
+        'Home Appliances': 'HOME_APPLIANCES',
+        'Pet Supplies': 'PET_SUPPLIES',
+        'Office Supplies': 'OFFICE_SUPPLIES',
+        'Other': 'OTHER'
+      };
+      
+      return categoryMap[value] || value.toUpperCase().replace(/\s+/g, '_').replace(/&/g, '');
+    }
+    return value;
+  })
+  category?: string;
 
   @IsOptional()
   @IsNumber({}, { message: 'Minimum price must be a valid number' })
@@ -86,10 +114,10 @@ export class SearchListingsDto {
   limit?: number = 20;
 
   @IsOptional()
-  @IsString()
+  @IsUUID(4, { message: 'userId must be a valid UUID' })
   userId?: string; // Filter by specific user (for "my listings")
 
   @IsOptional()
-  @IsString()
+  @IsUUID(4, { message: 'excludeUserId must be a valid UUID' })
   excludeUserId?: string; // Exclude listings from specific user
 }
