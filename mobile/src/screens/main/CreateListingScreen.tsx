@@ -106,7 +106,7 @@ const CreateListingScreen: React.FC = () => {
     setIsLoading(true);
     try {
       const response = await locationsApi.getStates();
-      setStates((response.data as any).states || []);
+      setStates((response as any).states || []);
     } catch (error) {
       showToast({
         type: 'error',
@@ -124,7 +124,7 @@ const CreateListingScreen: React.FC = () => {
     setIsLoadingCities(true);
     try {
       const response = await locationsApi.getCitiesByState(state);
-      setCities((response.data as any).cities || []);
+      setCities((response as any).cities || []);
     } catch (error) {
       showToast({
         type: 'error',

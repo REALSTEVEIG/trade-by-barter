@@ -13,7 +13,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Wallet, List, User, Grid } from 'lucide-react-native';
 import { listingsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
-import { useToast } from '@/hooks/useToast';
+import { useToast } from '@/contexts/toast-context';
 import { AppStackParamList } from '@/navigation';
 import { Listing } from '@/types';
 import { COLORS, TYPOGRAPHY, ERROR_MESSAGES } from '@/constants';
@@ -27,7 +27,7 @@ type FeedScreenNavigationProp = NativeStackNavigationProp<AppStackParamList>;
 const FeedScreen: React.FC = () => {
   const navigation = useNavigation<FeedScreenNavigationProp>();
   const { user } = useAuth();
-  const { toast } = useToast();
+  const { showToast } = useToast();
   
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,16 +72,14 @@ const FeedScreen: React.FC = () => {
 
       const response = await listingsApi.getListings(params);
       
-      // Handle different API response structures
+      // Mobile API client returns paginated response directly
+      const responseData = response as any;
       let newListings: Listing[] = [];
-      const responseData = response.data as any;
       
-      if (responseData?.listings) {
-        newListings = responseData.listings as Listing[];
+      if (Array.isArray(responseData.data)) {
+        newListings = responseData.data as Listing[];
       } else if (Array.isArray(responseData)) {
         newListings = responseData as Listing[];
-      } else if (Array.isArray(response)) {
-        newListings = response as Listing[];
       }
 
       if (page === 1) {
@@ -97,10 +95,12 @@ const FeedScreen: React.FC = () => {
       if (page === 1) {
         setListings([]);
       }
-      toast.error(
-        'Failed to load listings',
-        error.response?.data?.message || ERROR_MESSAGES.NETWORK
-      );
+      showToast({
+        type: 'error',
+        title: 'Failed to load listings',
+        message: error.response?.data?.message || ERROR_MESSAGES.NETWORK,
+        duration: 4000,
+      });
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -165,10 +165,12 @@ const FeedScreen: React.FC = () => {
         )
       );
     } catch (error: any) {
-      toast.error(
-        'Failed to update favorite',
-        error.response?.data?.message || 'Unable to update favorite status'
-      );
+      showToast({
+        type: 'error',
+        title: 'Failed to update favorite',
+        message: error.response?.data?.message || 'Unable to update favorite status',
+        duration: 4000,
+      });
     }
   };
 

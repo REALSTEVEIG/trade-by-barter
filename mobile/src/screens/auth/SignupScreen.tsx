@@ -17,7 +17,8 @@ import { ChevronDown, Check } from 'lucide-react-native';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/contexts/toast-context';
 import { AuthStackParamList } from '@/navigation';
-import { COLORS, TYPOGRAPHY, ERROR_MESSAGES, NIGERIAN_STATES } from '@/constants';
+import { COLORS, TYPOGRAPHY, ERROR_MESSAGES } from '@/constants';
+import { locationsApi } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Loading from '@/components/ui/Loading';
@@ -55,6 +56,11 @@ const SignupScreen: React.FC = () => {
   
   const [formErrors, setFormErrors] = useState<Partial<SignupForm>>({});
   const [showStateModal, setShowStateModal] = useState(false);
+  const [showCityModal, setShowCityModal] = useState(false);
+  const [states, setStates] = useState<string[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [isLoadingStates, setIsLoadingStates] = useState(false);
+  const [isLoadingCities, setIsLoadingCities] = useState(false);
 
   const validateForm = (): boolean => {
     const errors: Partial<SignupForm> = {};
@@ -161,7 +167,65 @@ const SignupScreen: React.FC = () => {
     if (error) {
       clearError();
     }
+    
+    // Reset city when state changes
+    if (field === 'state') {
+      setForm(prev => ({ ...prev, city: '' }));
+      setCities([]);
+      if (formErrors.city) {
+        setFormErrors(prev => ({ ...prev, city: undefined }));
+      }
+    }
   };
+
+  // Load states on component mount
+  React.useEffect(() => {
+    const loadStates = async () => {
+      setIsLoadingStates(true);
+      try {
+        const response = await locationsApi.getStates();
+        setStates((response as any).states);
+      } catch (error) {
+        showToast({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to load states. Please check your connection.',
+          duration: 4000,
+        });
+      } finally {
+        setIsLoadingStates(false);
+      }
+    };
+    
+    loadStates();
+  }, [showToast]);
+
+  // Load cities when state changes
+  React.useEffect(() => {
+    if (form.state) {
+      const loadCities = async () => {
+        setIsLoadingCities(true);
+        setCities([]);
+        try {
+          const response = await locationsApi.getCitiesByState(form.state);
+          setCities((response as any).cities);
+        } catch (error) {
+          showToast({
+            type: 'error',
+            title: 'Error',
+            message: 'Failed to load cities for selected state.',
+            duration: 4000,
+          });
+        } finally {
+          setIsLoadingCities(false);
+        }
+      };
+      
+      loadCities();
+    } else {
+      setCities([]);
+    }
+  }, [form.state, showToast]);
 
   const navigateToLogin = (): void => {
     navigation.navigate('Login');
@@ -283,9 +347,10 @@ const SignupScreen: React.FC = () => {
               <TouchableOpacity
                 style={[styles.dropdownButton, formErrors.state ? styles.dropdownError : undefined]}
                 onPress={() => setShowStateModal(true)}
+                disabled={isLoadingStates}
               >
                 <Text style={[styles.dropdownText, !form.state && styles.dropdownPlaceholder]}>
-                  {form.state || 'Select your state'}
+                  {isLoadingStates ? 'Loading states...' : (form.state || 'Select your state')}
                 </Text>
                 <ChevronDown size={20} color={COLORS.neutral.gray} />
               </TouchableOpacity>
@@ -295,14 +360,25 @@ const SignupScreen: React.FC = () => {
             </View>
 
             <View style={styles.input}>
-              <Input
-                label="City"
-                value={form.city}
-                onChangeText={(value) => handleInputChange('city', value)}
-                placeholder="Enter your city"
-                autoCapitalize="words"
-                error={formErrors.city}
-              />
+              <Text style={styles.label}>City *</Text>
+              <TouchableOpacity
+                style={[styles.dropdownButton, formErrors.city ? styles.dropdownError : undefined]}
+                onPress={() => setShowCityModal(true)}
+                disabled={!form.state || isLoadingCities}
+              >
+                <Text style={[styles.dropdownText, !form.city && styles.dropdownPlaceholder]}>
+                  {!form.state
+                    ? 'Select a state first'
+                    : isLoadingCities
+                    ? 'Loading cities...'
+                    : (form.city || 'Select your city')
+                  }
+                </Text>
+                <ChevronDown size={20} color={COLORS.neutral.gray} />
+              </TouchableOpacity>
+              {formErrors.city && (
+                <Text style={styles.errorText}>{formErrors.city}</Text>
+              )}
             </View>
 
             <View style={styles.input}>
@@ -354,7 +430,7 @@ const SignupScreen: React.FC = () => {
                 </TouchableOpacity>
               </View>
               <FlatList
-                data={NIGERIAN_STATES}
+                data={states}
                 keyExtractor={(item) => item}
                 renderItem={({ item }) => (
                   <TouchableOpacity
@@ -377,6 +453,53 @@ const SignupScreen: React.FC = () => {
                       <Check size={20} color={COLORS.primary.DEFAULT} />
                     )}
                   </TouchableOpacity>
+                )}
+              />
+            </View>
+          </View>
+        </Modal>
+
+        {/* City Selection Modal */}
+        <Modal visible={showCityModal} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Select City</Text>
+                <TouchableOpacity onPress={() => setShowCityModal(false)}>
+                  <Text style={styles.modalClose}>×</Text>
+                </TouchableOpacity>
+              </View>
+              <FlatList
+                data={cities}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[
+                      styles.modalItem,
+                      form.city === item && styles.modalItemSelected
+                    ]}
+                    onPress={() => {
+                      handleInputChange('city', item);
+                      setShowCityModal(false);
+                    }}
+                  >
+                    <Text style={[
+                      styles.modalItemText,
+                      form.city === item && styles.modalItemTextSelected
+                    ]}>
+                      {item}
+                    </Text>
+                    {form.city === item && (
+                      <Check size={20} color={COLORS.primary.DEFAULT} />
+                    )}
+                  </TouchableOpacity>
+                )}
+                ListEmptyComponent={() => (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyStateText}>
+                      {isLoadingCities ? 'Loading cities...' : 'No cities available'}
+                    </Text>
+                  </View>
                 )}
               />
             </View>
@@ -585,6 +708,15 @@ const styles = StyleSheet.create({
   modalItemTextSelected: {
     color: COLORS.primary.DEFAULT,
     fontWeight: '500',
+  },
+  emptyState: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    fontSize: TYPOGRAPHY.fontSize.base,
+    color: COLORS.neutral.gray,
+    fontFamily: TYPOGRAPHY.fontFamily.inter,
   },
 });
 

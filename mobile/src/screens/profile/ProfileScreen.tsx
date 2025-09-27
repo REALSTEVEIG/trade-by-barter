@@ -91,23 +91,9 @@ const ProfileScreen: React.FC = () => {
 
     try {
       setIsLoadingListings(true);
-      const response = await listingsApi.getListings({
-        page: 1,
-        limit: 50,
-        userId: user.id
-      });
-      
-      let listingsData = [];
-      const responseData = response.data as any;
-      if (responseData?.listings) {
-        listingsData = responseData.listings;
-      } else if (Array.isArray(responseData)) {
-        listingsData = responseData;
-      } else if (Array.isArray(response)) {
-        listingsData = response as any;
-      }
-      
-      setListings(listingsData || []);
+      // Use the API client with userId parameter
+      const response = await listingsApi.getListings({ userId: user.id });
+      setListings((response.data as UserListing[]) || []);
     } catch (error: any) {
       showToast({
         type: 'error',
@@ -213,7 +199,7 @@ const ProfileScreen: React.FC = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigation.navigate('Login' as any);
+      // Don't manually navigate - auth context will handle navigation automatically
     } catch (error: any) {
       showToast({
         type: 'error',
@@ -300,14 +286,21 @@ const ProfileScreen: React.FC = () => {
 
             <View style={styles.ratingContainer}>
               <View style={styles.starsContainer}>
-                {renderStars(profile?.rating || 4.8)}
+                {renderStars(profile?.rating || 0)}
               </View>
               <Text style={styles.ratingText}>
-                {profile?.rating || 4.8} ({profile?.reviewCount || 125} reviews)
+                {profile?.rating || 0} ({profile?.reviewCount || 0} reviews)
               </Text>
             </View>
 
             <View style={styles.actionButtons}>
+              <Button
+                title="Wallet"
+                onPress={() => navigation.navigate('Wallet' as any)}
+                variant="outline"
+                size="sm"
+                style={styles.actionButton}
+              />
               <Button
                 title="Edit profile"
                 onPress={() => showToast({
@@ -321,7 +314,7 @@ const ProfileScreen: React.FC = () => {
                 style={styles.actionButton}
               />
               <Button
-                title="Request verification"
+                title="Verification"
                 onPress={() => showToast({
                   type: 'info',
                   title: 'Coming Soon',
