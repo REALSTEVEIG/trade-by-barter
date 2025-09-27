@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/auth-context';
 import { listingsApi, authApi } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 import { formatNaira } from '@/lib/utils';
 
 interface UserProfile {
@@ -40,10 +41,12 @@ type TabType = 'listings' | 'trades' | 'reviews';
 export default function ProfilePage(): React.ReactElement {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('listings');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [listings, setListings] = useState<UserListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingListings, setIsLoadingListings] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -54,53 +57,48 @@ export default function ProfilePage(): React.ReactElement {
     try {
       const response = await authApi.getProfile();
       setProfile(response.data as UserProfile);
-    } catch (error) {
-      console.error('Error loading profile:', error);
+    } catch (error: any) {
+      toast.error('Error', 'Failed to load profile data');
     }
   };
 
   const loadListings = async () => {
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const response = await listingsApi.getListings({ userId: user?.id });
-      setListings(response.data as UserListing[]);
-    } catch (error) {
-      console.error('Error loading listings:', error);
+      setIsLoadingListings(true);
+      // Use the correct parameter structure for getting user's own listings
+      const response = await listingsApi.getListings({
+        page: 1,
+        limit: 50,
+        userId: user.id
+      });
+      
+      // Handle different response structures
+      let listingsData = [];
+      const responseData = response.data as any;
+      if (responseData?.listings) {
+        listingsData = responseData.listings;
+      } else if (Array.isArray(responseData)) {
+        listingsData = responseData;
+      } else if (Array.isArray(response)) {
+        listingsData = response as any;
+      }
+      
+      setListings(listingsData || []);
+    } catch (error: any) {
+      toast.error('Error', 'Failed to load your listings');
+      setListings([]);
     } finally {
       setIsLoading(false);
+      setIsLoadingListings(false);
     }
   };
 
-  const mockListings: UserListing[] = [
-    {
-      id: '1',
-      title: 'Wireless Headphones',
-      category: 'Electronics',
-      price: 15000,
-      images: ['/api/placeholder/120/120'],
-      status: 'active',
-      createdAt: '2024-01-15'
-    },
-    {
-      id: '2',
-      title: 'Designer T-Shirt',
-      category: 'Clothing',
-      price: 8000,
-      images: ['/api/placeholder/120/120'],
-      status: 'active',
-      createdAt: '2024-01-14'
-    },
-    {
-      id: '3',
-      title: 'Coffee Maker',
-      category: 'Home Goods',
-      price: 12000,
-      images: ['/api/placeholder/120/120'],
-      status: 'active',
-      createdAt: '2024-01-13'
-    }
-  ];
-
-  const displayListings = listings && listings.length > 0 ? listings : mockListings;
+  const displayListings = listings || [];
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -199,8 +197,8 @@ export default function ProfilePage(): React.ReactElement {
                 try {
                   await logout();
                   router.push('/auth/login');
-                } catch (error) {
-                  console.error('Logout error:', error);
+                } catch (error: any) {
+                  toast.error('Error', 'Failed to logout. Please try again.');
                 }
               }}
               className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -252,7 +250,13 @@ export default function ProfilePage(): React.ReactElement {
       <div className="p-4">
         {activeTab === 'listings' && (
           <div className="space-y-4">
-            {displayListings.map((listing) => (
+            {isLoadingListings ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading your listings...</p>
+              </div>
+            ) : displayListings.length > 0 ? (
+              displayListings.map((listing) => (
               <Card key={listing.id} className="overflow-hidden">
                 <CardContent className="p-0">
                   <div className="flex">
@@ -273,7 +277,7 @@ export default function ProfilePage(): React.ReactElement {
                             {listing.title}
                           </h3>
                           <p className="text-lg font-bold text-primary-600">
-                            {formatNaira(listing.price * 100)}
+                            {formatNaira(listing.price)}
                           </p>
                         </div>
                         <Button 
@@ -289,9 +293,8 @@ export default function ProfilePage(): React.ReactElement {
                   </div>
                 </CardContent>
               </Card>
-            ))}
-
-            {displayListings.length === 0 && (
+              ))
+            ) : (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
                   <Settings className="w-8 h-8 text-gray-400" />

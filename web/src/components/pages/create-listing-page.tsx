@@ -24,6 +24,7 @@ interface CreateListingFormData {
   acceptsCash: boolean;
   acceptsSwap: boolean;
   isSwapOnly: boolean;
+  isCashOnly: boolean;
   swapPreferences: string;
   images: File[];
 }
@@ -51,6 +52,7 @@ function CreateListingPageComponent(): React.ReactElement {
     acceptsCash: true,
     acceptsSwap: true,
     isSwapOnly: false,
+    isCashOnly: false,
     swapPreferences: '',
     images: []
   });
@@ -91,6 +93,7 @@ function CreateListingPageComponent(): React.ReactElement {
           acceptsCash: false,
           acceptsSwap: true,
           isSwapOnly: true,
+          isCashOnly: false,
         }));
         break;
       case 'cash':
@@ -99,6 +102,7 @@ function CreateListingPageComponent(): React.ReactElement {
           acceptsCash: true,
           acceptsSwap: false,
           isSwapOnly: false,
+          isCashOnly: true,
         }));
         break;
       case 'both':
@@ -108,15 +112,16 @@ function CreateListingPageComponent(): React.ReactElement {
           acceptsCash: true,
           acceptsSwap: true,
           isSwapOnly: false,
+          isCashOnly: false,
         }));
         break;
     }
   };
 
   const getCurrentTradeType = (): string => {
-    if (formData.isSwapOnly && formData.acceptsSwap && !formData.acceptsCash) {
+    if (formData.isSwapOnly) {
       return 'swap';
-    } else if (formData.acceptsCash && !formData.acceptsSwap) {
+    } else if (formData.isCashOnly) {
       return 'cash';
     } else {
       return 'both';
@@ -174,6 +179,7 @@ function CreateListingPageComponent(): React.ReactElement {
       formDataToSend.append('acceptsCash', formData.acceptsCash.toString());
       formDataToSend.append('acceptsSwap', formData.acceptsSwap.toString());
       formDataToSend.append('isSwapOnly', formData.isSwapOnly.toString());
+      formDataToSend.append('isCashOnly', formData.isCashOnly.toString());
       
       if (formData.swapPreferences) {
         formDataToSend.append('swapPreferences', JSON.stringify([formData.swapPreferences]));

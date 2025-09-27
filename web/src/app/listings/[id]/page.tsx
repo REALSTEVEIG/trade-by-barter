@@ -22,6 +22,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { listingsApi } from '@/lib/api';
 import { formatNaira, formatTimeAgo } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 
 interface Listing {
@@ -56,6 +57,7 @@ export default function ListingDetailPage(): React.ReactElement {
   const { id } = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [listing, setListing] = useState<Listing | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,8 +71,9 @@ export default function ListingDetailPage(): React.ReactElement {
         const response = await listingsApi.getListing(id as string);
         setListing(response.data as Listing);
       } catch (error: any) {
-        console.error('Error fetching listing:', error);
-        setError(error.response?.data?.message || 'Failed to load listing');
+        const errorMessage = error.response?.data?.message || 'Failed to load listing';
+        setError(errorMessage);
+        toast.error("Error", errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -87,21 +90,26 @@ export default function ListingDetailPage(): React.ReactElement {
     try {
       await listingsApi.toggleFavorite(listing.id);
       setListing(prev => prev ? { ...prev, isFavorited: !prev.isFavorited } : null);
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
+    } catch (error: any) {
+      toast.error("Error", "Failed to update favorite. Please try again.");
     }
   };
 
   const handleDelete = async () => {
-    if (!listing || !window.confirm('Are you sure you want to delete this listing?')) return;
+    if (!listing) return;
+    
+    const confirmed = window.confirm('Are you sure you want to delete this listing? This action cannot be undone.');
+    if (!confirmed) return;
     
     try {
       setIsDeleting(true);
       await listingsApi.deleteListing(listing.id);
+      toast.success("Success", "Listing deleted successfully");
       router.push('/feed');
     } catch (error: any) {
-      console.error('Error deleting listing:', error);
-      setError(error.response?.data?.message || 'Failed to delete listing');
+      const errorMessage = error.response?.data?.message || 'Failed to delete listing';
+      setError(errorMessage);
+      toast.error("Error", errorMessage);
     } finally {
       setIsDeleting(false);
     }
@@ -116,12 +124,16 @@ export default function ListingDetailPage(): React.ReactElement {
           url: window.location.href,
         });
       } catch (error) {
-        console.log('Error sharing:', error);
+        // User cancelled or error occurred
       }
     } else {
       // Fallback to copying URL
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("Link copied", "Listing URL copied to clipboard");
+      } catch (error) {
+        toast.error("Error", "Failed to copy link to clipboard");
+      }
     }
   };
 
@@ -270,7 +282,7 @@ export default function ListingDetailPage(): React.ReactElement {
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">{listing.title}</h1>
-                <p className="text-3xl font-bold text-primary-600">{formatNaira(listing.priceInKobo)}</p>
+                <p className="text-3xl font-bold text-primary-600">{formatNaira(listing.priceInKobo / 100)}</p>
               </div>
               
               <div className="flex flex-col gap-2">
@@ -281,14 +293,18 @@ export default function ListingDetailPage(): React.ReactElement {
             
             {/* Trade Options */}
             <div className="flex gap-2 mb-4">
-              {listing.acceptsCash && (
-                <Badge className="bg-green-100 text-green-800">Cash accepted</Badge>
-              )}
-              {listing.acceptsSwap && (
-                <Badge className="bg-blue-100 text-blue-800">
-                  {listing.isSwapOnly ? 'Swap only' : 'Swap accepted'}
-                </Badge>
-              )}
+              {listing.isSwapOnly ? (
+                <Badge className="bg-blue-100 text-blue-800">Swap only</Badge>
+              ) : listing.acceptsCash && listing.acceptsSwap ? (
+                <>
+                  <Badge className="bg-green-100 text-green-800">Cash</Badge>
+                  <Badge className="bg-blue-100 text-blue-800">Swap</Badge>
+                </>
+              ) : listing.acceptsCash ? (
+                <Badge className="bg-green-100 text-green-800">Cash only</Badge>
+              ) : listing.acceptsSwap ? (
+                <Badge className="bg-blue-100 text-blue-800">Swap only</Badge>
+              ) : null}
             </div>
             
             {/* Location */}

@@ -218,16 +218,44 @@ export const offersApi = {
     return apiClient.get(`/offers/${id}`);
   },
 
-  createOffer: async (data: any) => {
+  createOffer: async (data: {
+    listingId: string;
+    type: 'CASH' | 'SWAP' | 'HYBRID';
+    cashAmount?: number;
+    offeredListingIds?: string[];
+    message?: string;
+    expiresAt?: string;
+  }) => {
     return apiClient.post('/offers', data);
   },
 
-  updateOfferStatus: async (id: string, status: string) => {
-    return apiClient.patch(`/offers/${id}/status`, { status });
+  acceptOffer: async (id: string) => {
+    return apiClient.put(`/offers/${id}/accept`);
   },
 
-  counterOffer: async (id: string, data: any) => {
+  rejectOffer: async (id: string) => {
+    return apiClient.put(`/offers/${id}/reject`);
+  },
+
+  withdrawOffer: async (id: string) => {
+    return apiClient.delete(`/offers/${id}`);
+  },
+
+  counterOffer: async (id: string, data: {
+    type: 'CASH' | 'SWAP' | 'HYBRID';
+    cashAmount?: number;
+    offeredListingIds?: string[];
+    message?: string;
+  }) => {
     return apiClient.post(`/offers/${id}/counter`, data);
+  },
+
+  getOffersForListing: async (listingId: string, params?: Record<string, any>) => {
+    return apiClient.getPaginated(`/offers/listing/${listingId}`, params);
+  },
+
+  getOfferStats: async () => {
+    return apiClient.get('/offers/stats');
   },
 };
 

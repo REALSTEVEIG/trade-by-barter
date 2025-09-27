@@ -10,6 +10,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { listingsApi, offersApi } from '@/lib/api';
 import { formatNaira } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/hooks/use-toast';
 
 interface Listing {
   id: string;
@@ -26,18 +28,12 @@ interface Listing {
   };
 }
 
-interface OfferData {
-  targetListingId: string;
-  offerType: 'item' | 'cash' | 'both';
-  cashAmount?: number;
-  message?: string;
-  offeredItems: string[];
-}
-
 export default function MakeOfferPage(): React.ReactElement {
   const router = useRouter();
   const searchParams = useSearchParams();
   const listingId = searchParams.get('listingId');
+  const { user } = useAuth();
+  const { toast } = useToast();
   
   const [targetListing, setTargetListing] = useState<Listing | null>(null);
   const [userListings, setUserListings] = useState<Listing[]>([]);
@@ -59,69 +55,53 @@ export default function MakeOfferPage(): React.ReactElement {
     try {
       const response = await listingsApi.getListing(listingId!);
       setTargetListing(response.data as Listing);
-    } catch (error) {
-      console.error('Error loading listing:', error);
+    } catch (error: any) {
+      toast.error('Error', 'Failed to load listing details');
+      router.back();
     }
   };
 
   const loadUserListings = async () => {
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const response = await listingsApi.getListings({ userId: 'current' });
-      setUserListings(response.data as Listing[]);
-    } catch (error) {
-      console.error('Error loading user listings:', error);
+      const response = await listingsApi.getListings({
+        page: 1,
+        limit: 50,
+        userId: user.id
+      });
+      
+      let listingsData = [];
+      const responseData = response.data as any;
+      if (responseData?.listings) {
+        listingsData = responseData.listings;
+      } else if (Array.isArray(responseData)) {
+        listingsData = responseData;
+      } else if (Array.isArray(response)) {
+        listingsData = response as any;
+      }
+      
+      setUserListings(listingsData || []);
+    } catch (error: any) {
+      toast.error('Error', 'Failed to load your listings');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Mock data for demonstration
-  const mockTargetListing: Listing = {
-    id: '1',
-    title: 'Vintage Camera',
-    category: 'Electronics',
-    price: 25000,
-    images: ['/api/placeholder/200/200'],
-    condition: 'Very Good',
-    owner: {
-      id: '2',
-      firstName: 'Alex',
-      lastName: 'Johnson',
-      avatar: '/api/placeholder/50/50'
-    }
-  };
-
-  const mockUserListings: Listing[] = [
-    {
-      id: '3',
-      title: 'Gaming Headset',
-      category: 'Electronics',
-      price: 15000,
-      images: ['/api/placeholder/150/150'],
-      condition: 'Like New',
-      owner: {
-        id: 'current',
-        firstName: 'You',
-        lastName: '',
-      }
-    },
-    {
-      id: '4',
-      title: 'Designer Watch',
-      category: 'Accessories',
-      price: 35000,
-      images: ['/api/placeholder/150/150'],
-      condition: 'Brand New',
-      owner: {
-        id: 'current',
-        firstName: 'You',
-        lastName: '',
-      }
-    }
-  ];
-
-  const displayTargetListing = targetListing || mockTargetListing;
-  const displayUserListings = userListings.length > 0 ? userListings : mockUserListings;
+  if (!targetListing) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading listing...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleItemSelect = (itemId: string) => {
     setSelectedItems(prev => 
@@ -132,41 +112,73 @@ export default function MakeOfferPage(): React.ReactElement {
   };
 
   const handleSubmitOffer = async () => {
-    if (!listingId) return;
+    if (!listingId || !targetListing) return;
+
+    // Validation
+    if (offerType === 'item' && selectedItems.length === 0) {
+      toast.error('Error', 'Please select at least one item to trade');
+      return;
+    }
+
+    if (offerType === 'cash' && (!cashAmount || parseFloat(cashAmount) <= 0)) {
+      toast.error('Error', 'Please enter a valid cash amount');
+      return;
+    }
+
+    if (offerType === 'both' && (selectedItems.length === 0 || !cashAmount || parseFloat(cashAmount) <= 0)) {
+      toast.error('Error', 'Please select items and enter a cash amount');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      const offerData: OfferData = {
-        targetListingId: listingId,
-        offerType,
-        offeredItems: selectedItems,
+      // Map offer types to backend enum
+      const typeMapping = {
+        'item': 'SWAP',
+        'cash': 'CASH',
+        'both': 'HYBRID'
+      } as const;
+
+      const offerData: any = {
+        listingId,
+        type: typeMapping[offerType],
       };
+
+      if (selectedItems.length > 0) {
+        offerData.offeredListingIds = selectedItems;
+      }
+
+      if (offerType === 'cash' || offerType === 'both') {
+        offerData.cashAmount = Math.round(parseFloat(cashAmount) * 100); // Convert to kobo
+      }
 
       if (message.trim()) {
         offerData.message = message.trim();
       }
 
-      if (offerType === 'cash' || offerType === 'both') {
-        offerData.cashAmount = parseFloat(cashAmount) || 0;
-      }
-
       await offersApi.createOffer(offerData);
       
-      // Navigate to chat or success page
-      router.push(`/chat?userId=${displayTargetListing.owner.id}`);
-    } catch (error) {
-      console.error('Error creating offer:', error);
+      toast.success('Success', 'Your offer has been sent successfully!');
+      
+      // Navigate back to listing or offers page
+      setTimeout(() => {
+        router.push('/offers');
+      }, 1000);
+    } catch (error: any) {
+      let errorMessage = error.response?.data?.message || 'Failed to send offer';
+      errorMessage = errorMessage.replace(/^(Validation [Ee]rror:?\s*)/i, '')
+                                 .replace(/^([Ee]rror:?\s*)/i, '');
+      
+      toast.error('Failed to Send Offer', errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const selectedItemsValue = selectedItems.reduce((total, itemId) => {
-    const item = displayUserListings.find(l => l.id === itemId);
+    const item = userListings.find(l => l.id === itemId);
     return total + (item?.price || 0);
   }, 0);
-
-  const totalOfferValue = selectedItemsValue + (parseFloat(cashAmount) || 0);
 
   if (isLoading) {
     return (
@@ -202,23 +214,23 @@ export default function MakeOfferPage(): React.ReactElement {
             <div className="flex gap-4">
               <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden">
                 <img
-                  src={displayTargetListing.images[0]}
-                  alt={displayTargetListing.title}
+                  src={targetListing.images[0] || '/api/placeholder/200/200'}
+                  alt={targetListing.title}
                   className="w-full h-full object-cover"
                 />
               </div>
               <div className="flex-1">
                 <Badge variant="secondary" className="text-xs mb-1">
-                  {displayTargetListing.category}
+                  {targetListing.category}
                 </Badge>
                 <h3 className="font-semibold text-gray-900 mb-1">
-                  {displayTargetListing.title}
+                  {targetListing.title}
                 </h3>
                 <p className="text-sm text-gray-600 mb-1">
-                  Condition: {displayTargetListing.condition}
+                  Condition: {targetListing.condition}
                 </p>
                 <p className="text-lg font-bold text-primary-600">
-                  {formatNaira(displayTargetListing.price * 100)}
+                  {formatNaira(targetListing.price)}
                 </p>
               </div>
             </div>
@@ -335,7 +347,7 @@ export default function MakeOfferPage(): React.ReactElement {
             <CardContent className="p-4">
               <h3 className="font-medium text-gray-900 mb-3">Select your items</h3>
               
-              {displayUserListings.length === 0 ? (
+              {userListings.length === 0 ? (
                 <div className="text-center py-8">
                   <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
                     <Plus className="w-8 h-8 text-gray-400" />
@@ -347,7 +359,7 @@ export default function MakeOfferPage(): React.ReactElement {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {displayUserListings.map((listing) => (
+                  {userListings.map((listing) => (
                     <div
                       key={listing.id}
                       onClick={() => handleItemSelect(listing.id)}
@@ -359,7 +371,7 @@ export default function MakeOfferPage(): React.ReactElement {
                     >
                       <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden mr-3">
                         <img
-                          src={listing.images[0]}
+                          src={listing.images[0] || '/api/placeholder/150/150'}
                           alt={listing.title}
                           className="w-full h-full object-cover"
                         />
@@ -368,7 +380,7 @@ export default function MakeOfferPage(): React.ReactElement {
                         <h4 className="font-medium text-gray-900">{listing.title}</h4>
                         <p className="text-sm text-gray-600">{listing.category}</p>
                         <p className="text-sm font-semibold text-primary-600">
-                          {formatNaira(listing.price * 100)}
+                          {formatNaira(listing.price)}
                         </p>
                       </div>
                       <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
@@ -409,13 +421,13 @@ export default function MakeOfferPage(): React.ReactElement {
               <h3 className="font-medium text-gray-900 mb-2">Offer Summary</h3>
               <div className="space-y-1 text-sm">
                 {selectedItems.length > 0 && (
-                  <p>Items value: <span className="font-semibold">{formatNaira(selectedItemsValue * 100)}</span></p>
+                  <p>Items value: <span className="font-semibold">{formatNaira(selectedItemsValue)}</span></p>
                 )}
                 {cashAmount && (
                   <p>Cash: <span className="font-semibold">{formatNaira(parseFloat(cashAmount) * 100)}</span></p>
                 )}
                 <div className="border-t border-primary-200 pt-2 mt-2">
-                  <p className="font-semibold">Total offer: {formatNaira(totalOfferValue * 100)}</p>
+                  <p className="font-semibold">Total offer: {formatNaira((selectedItemsValue + (parseFloat(cashAmount) || 0) * 100))}</p>
                 </div>
               </div>
             </CardContent>
