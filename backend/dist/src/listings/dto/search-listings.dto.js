@@ -17,21 +17,22 @@ var ListingCategoryFilter;
     ListingCategoryFilter["ELECTRONICS"] = "ELECTRONICS";
     ListingCategoryFilter["FASHION"] = "FASHION";
     ListingCategoryFilter["VEHICLES"] = "VEHICLES";
-    ListingCategoryFilter["FURNITURE"] = "FURNITURE";
-    ListingCategoryFilter["APPLIANCES"] = "APPLIANCES";
-    ListingCategoryFilter["BOOKS"] = "BOOKS";
-    ListingCategoryFilter["SPORTS"] = "SPORTS";
-    ListingCategoryFilter["TOYS"] = "TOYS";
-    ListingCategoryFilter["BEAUTY"] = "BEAUTY";
     ListingCategoryFilter["HOME_GARDEN"] = "HOME_GARDEN";
-    ListingCategoryFilter["BOOKS_EDUCATION"] = "BOOKS_EDUCATION";
+    ListingCategoryFilter["BOOKS_MEDIA"] = "BOOKS_MEDIA";
     ListingCategoryFilter["HEALTH_BEAUTY"] = "HEALTH_BEAUTY";
     ListingCategoryFilter["SPORTS_RECREATION"] = "SPORTS_RECREATION";
     ListingCategoryFilter["BABY_KIDS"] = "BABY_KIDS";
+    ListingCategoryFilter["AUTOMOTIVE"] = "AUTOMOTIVE";
+    ListingCategoryFilter["TOYS_GAMES"] = "TOYS_GAMES";
     ListingCategoryFilter["AGRICULTURE"] = "AGRICULTURE";
     ListingCategoryFilter["SERVICES"] = "SERVICES";
     ListingCategoryFilter["ART_CRAFTS"] = "ART_CRAFTS";
     ListingCategoryFilter["MUSICAL_INSTRUMENTS"] = "MUSICAL_INSTRUMENTS";
+    ListingCategoryFilter["FURNITURE"] = "FURNITURE";
+    ListingCategoryFilter["APPLIANCES"] = "APPLIANCES";
+    ListingCategoryFilter["JEWELRY"] = "JEWELRY";
+    ListingCategoryFilter["FOOD_BEVERAGES"] = "FOOD_BEVERAGES";
+    ListingCategoryFilter["TOOLS"] = "TOOLS";
     ListingCategoryFilter["OTHER"] = "OTHER";
 })(ListingCategoryFilter || (exports.ListingCategoryFilter = ListingCategoryFilter = {}));
 var TradeTypeFilter;
@@ -59,6 +60,7 @@ class SearchListingsDto {
     page = 1;
     limit = 20;
     userId;
+    excludeUserId;
 }
 exports.SearchListingsDto = SearchListingsDto;
 __decorate([
@@ -121,4 +123,9 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], SearchListingsDto.prototype, "userId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SearchListingsDto.prototype, "excludeUserId", void 0);
 //# sourceMappingURL=search-listings.dto.js.map

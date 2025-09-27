@@ -5,21 +5,22 @@ export enum ListingCategoryFilter {
   ELECTRONICS = 'ELECTRONICS',
   FASHION = 'FASHION',
   VEHICLES = 'VEHICLES',
-  FURNITURE = 'FURNITURE',
-  APPLIANCES = 'APPLIANCES',
-  BOOKS = 'BOOKS',
-  SPORTS = 'SPORTS',
-  TOYS = 'TOYS',
-  BEAUTY = 'BEAUTY',
   HOME_GARDEN = 'HOME_GARDEN',
-  BOOKS_EDUCATION = 'BOOKS_EDUCATION',
+  BOOKS_MEDIA = 'BOOKS_MEDIA',
   HEALTH_BEAUTY = 'HEALTH_BEAUTY',
   SPORTS_RECREATION = 'SPORTS_RECREATION',
   BABY_KIDS = 'BABY_KIDS',
+  AUTOMOTIVE = 'AUTOMOTIVE',
+  TOYS_GAMES = 'TOYS_GAMES',
   AGRICULTURE = 'AGRICULTURE',
   SERVICES = 'SERVICES',
   ART_CRAFTS = 'ART_CRAFTS',
   MUSICAL_INSTRUMENTS = 'MUSICAL_INSTRUMENTS',
+  FURNITURE = 'FURNITURE',
+  APPLIANCES = 'APPLIANCES',
+  JEWELRY = 'JEWELRY',
+  FOOD_BEVERAGES = 'FOOD_BEVERAGES',
+  TOOLS = 'TOOLS',
   OTHER = 'OTHER',
 }
 
@@ -87,4 +88,8 @@ export class SearchListingsDto {
   @IsOptional()
   @IsString()
   userId?: string; // Filter by specific user (for "my listings")
+
+  @IsOptional()
+  @IsString()
+  excludeUserId?: string; // Exclude listings from specific user
 }

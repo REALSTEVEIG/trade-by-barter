@@ -1,18 +1,23 @@
 export declare enum ListingCategory {
     ELECTRONICS = "ELECTRONICS",
     FASHION = "FASHION",
-    HOME_APPLIANCES = "HOME_APPLIANCES",
-    BOOKS = "BOOKS",
-    SPORTS = "SPORTS",
+    VEHICLES = "VEHICLES",
+    HOME_GARDEN = "HOME_GARDEN",
+    BOOKS_MEDIA = "BOOKS_MEDIA",
+    HEALTH_BEAUTY = "HEALTH_BEAUTY",
+    SPORTS_RECREATION = "SPORTS_RECREATION",
+    BABY_KIDS = "BABY_KIDS",
     AUTOMOTIVE = "AUTOMOTIVE",
-    BEAUTY = "BEAUTY",
-    TOYS = "TOYS",
+    TOYS_GAMES = "TOYS_GAMES",
+    AGRICULTURE = "AGRICULTURE",
+    SERVICES = "SERVICES",
+    ART_CRAFTS = "ART_CRAFTS",
+    MUSICAL_INSTRUMENTS = "MUSICAL_INSTRUMENTS",
+    FURNITURE = "FURNITURE",
+    APPLIANCES = "APPLIANCES",
     JEWELRY = "JEWELRY",
-    ARTS_CRAFTS = "ARTS_CRAFTS",
-    MUSIC = "MUSIC",
     FOOD_BEVERAGES = "FOOD_BEVERAGES",
     TOOLS = "TOOLS",
-    SERVICES = "SERVICES",
     OTHER = "OTHER"
 }
 export declare enum ItemCondition {
@@ -30,6 +35,7 @@ export declare class CreateListingDto {
     condition: ItemCondition;
     priceInKobo?: number;
     isSwapOnly?: boolean;
+    isCashOnly?: boolean;
     acceptsCash?: boolean;
     acceptsSwap?: boolean;
     swapPreferences?: string[];

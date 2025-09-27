@@ -105,6 +105,7 @@ export class ListingsService {
   async createListing(userId: string, createListingDto: CreateListingDto): Promise<ListingResponse> {
     // Normalize trade type logic based on frontend selections
     let isSwapOnly = false;
+    let isCashOnly = false;
     let acceptsCash = false;
     let acceptsSwap = false;
     let finalPrice: number | undefined = createListingDto.priceInKobo;
@@ -113,12 +114,14 @@ export class ListingsService {
     if (createListingDto.isSwapOnly) {
       // Swap only - no cash accepted
       isSwapOnly = true;
+      isCashOnly = false;
       acceptsCash = false;
       acceptsSwap = true;
       finalPrice = undefined; // No price for swap-only
-    } else if (createListingDto.acceptsCash && !createListingDto.acceptsSwap) {
+    } else if (createListingDto.isCashOnly) {
       // Cash only - no swap accepted
       isSwapOnly = false;
+      isCashOnly = true;
       acceptsCash = true;
       acceptsSwap = false;
       if (!finalPrice || finalPrice === 0) {
@@ -127,6 +130,7 @@ export class ListingsService {
     } else if (createListingDto.acceptsCash && createListingDto.acceptsSwap) {
       // Both cash and swap accepted
       isSwapOnly = false;
+      isCashOnly = false;
       acceptsCash = true;
       acceptsSwap = true;
       // Price is optional for hybrid listings
@@ -167,6 +171,7 @@ export class ListingsService {
   ): Promise<ListingResponse> {
     // Normalize trade type logic based on frontend selections
     let isSwapOnly = false;
+    let isCashOnly = false;
     let acceptsCash = false;
     let acceptsSwap = false;
     let finalPrice: number | undefined = createListingDto.priceInKobo;
@@ -175,12 +180,14 @@ export class ListingsService {
     if (createListingDto.isSwapOnly) {
       // Swap only - no cash accepted
       isSwapOnly = true;
+      isCashOnly = false;
       acceptsCash = false;
       acceptsSwap = true;
       finalPrice = undefined; // No price for swap-only
-    } else if (createListingDto.acceptsCash && !createListingDto.acceptsSwap) {
+    } else if (createListingDto.isCashOnly) {
       // Cash only - no swap accepted
       isSwapOnly = false;
+      isCashOnly = true;
       acceptsCash = true;
       acceptsSwap = false;
       if (!finalPrice || finalPrice === 0) {
@@ -189,6 +196,7 @@ export class ListingsService {
     } else if (createListingDto.acceptsCash && createListingDto.acceptsSwap) {
       // Both cash and swap accepted
       isSwapOnly = false;
+      isCashOnly = false;
       acceptsCash = true;
       acceptsSwap = true;
       // Price is optional for hybrid listings
@@ -376,20 +384,21 @@ export class ListingsService {
   }
 
   async searchListings(
-    searchDto: SearchListingsDto, 
+    searchDto: SearchListingsDto,
     currentUserId?: string
   ): Promise<SearchListingsResponse> {
-    const { 
-      q, 
-      category, 
-      minPrice, 
-      maxPrice, 
-      location, 
-      tradeType, 
+    const {
+      q,
+      category,
+      minPrice,
+      maxPrice,
+      location,
+      tradeType,
       sortBy = SortByFilter.NEWEST,
-      page = 1, 
+      page = 1,
       limit = 20,
       userId: filterUserId,
+      excludeUserId,
     } = searchDto;
 
     const skip = (page - 1) * limit;
@@ -448,6 +457,11 @@ export class ListingsService {
     // User filter (for "my listings")
     if (filterUserId) {
       where.userId = filterUserId;
+    }
+
+    // Exclude specific user listings
+    if (excludeUserId) {
+      where.userId = { not: excludeUserId };
     }
 
     // Sorting

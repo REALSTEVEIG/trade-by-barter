@@ -104,17 +104,20 @@ let ListingsService = class ListingsService {
     }
     async createListing(userId, createListingDto) {
         let isSwapOnly = false;
+        let isCashOnly = false;
         let acceptsCash = false;
         let acceptsSwap = false;
         let finalPrice = createListingDto.priceInKobo;
         if (createListingDto.isSwapOnly) {
             isSwapOnly = true;
+            isCashOnly = false;
             acceptsCash = false;
             acceptsSwap = true;
             finalPrice = undefined;
         }
-        else if (createListingDto.acceptsCash && !createListingDto.acceptsSwap) {
+        else if (createListingDto.isCashOnly) {
             isSwapOnly = false;
+            isCashOnly = true;
             acceptsCash = true;
             acceptsSwap = false;
             if (!finalPrice || finalPrice === 0) {
@@ -123,6 +126,7 @@ let ListingsService = class ListingsService {
         }
         else if (createListingDto.acceptsCash && createListingDto.acceptsSwap) {
             isSwapOnly = false;
+            isCashOnly = false;
             acceptsCash = true;
             acceptsSwap = true;
         }
@@ -155,17 +159,20 @@ let ListingsService = class ListingsService {
     }
     async createListingWithImages(userId, createListingDto, files) {
         let isSwapOnly = false;
+        let isCashOnly = false;
         let acceptsCash = false;
         let acceptsSwap = false;
         let finalPrice = createListingDto.priceInKobo;
         if (createListingDto.isSwapOnly) {
             isSwapOnly = true;
+            isCashOnly = false;
             acceptsCash = false;
             acceptsSwap = true;
             finalPrice = undefined;
         }
-        else if (createListingDto.acceptsCash && !createListingDto.acceptsSwap) {
+        else if (createListingDto.isCashOnly) {
             isSwapOnly = false;
+            isCashOnly = true;
             acceptsCash = true;
             acceptsSwap = false;
             if (!finalPrice || finalPrice === 0) {
@@ -174,6 +181,7 @@ let ListingsService = class ListingsService {
         }
         else if (createListingDto.acceptsCash && createListingDto.acceptsSwap) {
             isSwapOnly = false;
+            isCashOnly = false;
             acceptsCash = true;
             acceptsSwap = true;
         }
@@ -319,7 +327,7 @@ let ListingsService = class ListingsService {
         return { message: 'Listing deleted successfully' };
     }
     async searchListings(searchDto, currentUserId) {
-        const { q, category, minPrice, maxPrice, location, tradeType, sortBy = dto_1.SortByFilter.NEWEST, page = 1, limit = 20, userId: filterUserId, } = searchDto;
+        const { q, category, minPrice, maxPrice, location, tradeType, sortBy = dto_1.SortByFilter.NEWEST, page = 1, limit = 20, userId: filterUserId, excludeUserId, } = searchDto;
         const skip = (page - 1) * limit;
         const where = {
             isActive: true,
@@ -363,6 +371,9 @@ let ListingsService = class ListingsService {
         }
         if (filterUserId) {
             where.userId = filterUserId;
+        }
+        if (excludeUserId) {
+            where.userId = { not: excludeUserId };
         }
         const orderBy = {};
         switch (sortBy) {

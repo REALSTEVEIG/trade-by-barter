@@ -16,18 +16,23 @@ var ListingCategory;
 (function (ListingCategory) {
     ListingCategory["ELECTRONICS"] = "ELECTRONICS";
     ListingCategory["FASHION"] = "FASHION";
-    ListingCategory["HOME_APPLIANCES"] = "HOME_APPLIANCES";
-    ListingCategory["BOOKS"] = "BOOKS";
-    ListingCategory["SPORTS"] = "SPORTS";
+    ListingCategory["VEHICLES"] = "VEHICLES";
+    ListingCategory["HOME_GARDEN"] = "HOME_GARDEN";
+    ListingCategory["BOOKS_MEDIA"] = "BOOKS_MEDIA";
+    ListingCategory["HEALTH_BEAUTY"] = "HEALTH_BEAUTY";
+    ListingCategory["SPORTS_RECREATION"] = "SPORTS_RECREATION";
+    ListingCategory["BABY_KIDS"] = "BABY_KIDS";
     ListingCategory["AUTOMOTIVE"] = "AUTOMOTIVE";
-    ListingCategory["BEAUTY"] = "BEAUTY";
-    ListingCategory["TOYS"] = "TOYS";
+    ListingCategory["TOYS_GAMES"] = "TOYS_GAMES";
+    ListingCategory["AGRICULTURE"] = "AGRICULTURE";
+    ListingCategory["SERVICES"] = "SERVICES";
+    ListingCategory["ART_CRAFTS"] = "ART_CRAFTS";
+    ListingCategory["MUSICAL_INSTRUMENTS"] = "MUSICAL_INSTRUMENTS";
+    ListingCategory["FURNITURE"] = "FURNITURE";
+    ListingCategory["APPLIANCES"] = "APPLIANCES";
     ListingCategory["JEWELRY"] = "JEWELRY";
-    ListingCategory["ARTS_CRAFTS"] = "ARTS_CRAFTS";
-    ListingCategory["MUSIC"] = "MUSIC";
     ListingCategory["FOOD_BEVERAGES"] = "FOOD_BEVERAGES";
     ListingCategory["TOOLS"] = "TOOLS";
-    ListingCategory["SERVICES"] = "SERVICES";
     ListingCategory["OTHER"] = "OTHER";
 })(ListingCategory || (exports.ListingCategory = ListingCategory = {}));
 var ItemCondition;
@@ -46,6 +51,7 @@ class CreateListingDto {
     condition;
     priceInKobo;
     isSwapOnly = false;
+    isCashOnly = false;
     acceptsCash = true;
     acceptsSwap = true;
     swapPreferences = [];
@@ -101,6 +107,12 @@ __decorate([
     (0, class_transformer_1.Transform)(({ value }) => value === 'true' || value === true),
     __metadata("design:type", Boolean)
 ], CreateListingDto.prototype, "isSwapOnly", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_transformer_1.Transform)(({ value }) => value === 'true' || value === true),
+    __metadata("design:type", Boolean)
+], CreateListingDto.prototype, "isCashOnly", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)(),
